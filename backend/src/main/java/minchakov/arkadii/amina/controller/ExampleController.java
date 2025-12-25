@@ -38,6 +38,7 @@ public class ExampleController {
 
     @PostMapping
     public ApiResponseEntity<Integer> create(@RequestBody Example example) {
+        System.out.println("Я запрос");
         return new ApiResponseEntity<>(201, "Success", repository.save(example).getId());
     }
 }

@@ -7,7 +7,7 @@
 <body>
 <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
 <script>
-    var sock = new SockJS('http://localhost:55234/ws/chat');
+    var sock = new SockJS('http://localhost:55234/ws/chat?token=df69567a-f448-4c61-9888-9e0344012de1');
 
     sock.onopen = function () {
         console.log('open');

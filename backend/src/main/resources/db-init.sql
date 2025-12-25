@@ -39,4 +39,10 @@ create table message
     content    varchar                        not null,
     created_at timestamp                      not null,
     updated_at timestamp                      not null
+);
+
+create table web_socket_token
+(
+    id      uuid primary key,
+    user_id integer unique references "user" (id) not null
 )

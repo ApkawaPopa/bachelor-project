@@ -3,17 +3,37 @@ POST http://localhost:55234/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "username": "testuser",
+  "username": "user",
   "passwordHash": "hashed_password_here",
   "publicKey": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
   "encryptedPrivateKey": "encrypted_private_key_data_here"
 }
 
 ### Вход
-POST http://localhost:55234/api/v1/auth/register
+//eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjkzNDk2ODgsInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ1c2VyIn0.mBC9V22eieQTUn8FeSdnZwmcaTzvdebd-Cctu-iY1CA
+POST http://localhost:55234/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "testuser",
+  "username": "user",
   "passwordHash": "hashed_password_here"
 }
+
+### Запрос к Example API для получения всех сообщений
+GET http://localhost:55234/api/v1/example/15
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjkzNDk3MTksInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ1c2VyIn0.lA6AuPkslZ-E3PnAuCms-FFmPWYey5l0nvscKz3EYL8
+
+
+### Запрос к Example API для публикации сообщения
+POST http://localhost:55234/api/v1/example
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjkzNDk3MTksInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ1c2VyIn0.lA6AuPkslZ-E3PnAuCms-FFmPWYey5l0nvscKz3EYL8
+
+{
+  "owner": "Аркадий",
+  "textMessage": "привет"
+}
+
+### Запрос на получение WebSocket токена
+POST http://localhost:55234/api/v1/auth/ws-token
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3NjkzNDk3MTksInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ1c2VyIn0.lA6AuPkslZ-E3PnAuCms-FFmPWYey5l0nvscKz3EYL8
