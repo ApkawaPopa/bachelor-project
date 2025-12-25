@@ -1,0 +1,19 @@
+### Регистрация
+POST http://localhost:55234/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "passwordHash": "hashed_password_here",
+  "publicKey": "-----BEGIN PUBLIC KEY-----\n...\n-----END PUBLIC KEY-----",
+  "encryptedPrivateKey": "encrypted_private_key_data_here"
+}
+
+### Вход
+POST http://localhost:55234/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "passwordHash": "hashed_password_here"
+}
