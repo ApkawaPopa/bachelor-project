@@ -1,6 +1,6 @@
-package minchakov.arkadii.amina;
+package minchakov.arkadii.amina.interceptor;
 
-import minchakov.arkadii.amina.dto.ApiResponseEntity;
+import minchakov.arkadii.amina.dto.ApiResponse;
 import minchakov.arkadii.amina.repository.WebSocketTokenRepository;
 import org.jspecify.annotations.Nullable;
 import org.springframework.http.server.ServerHttpRequest;
@@ -33,7 +33,7 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
     ) throws Exception {
         var query = request.getURI().getQuery();
         if (query == null || query.indexOf('&') != query.lastIndexOf('&') || !query.startsWith("token=")) {
-            var r = new ApiResponseEntity<>(400, "Only 'token' query parameter required", null);
+            var r = new ApiResponse<>(400, "Only 'token' query parameter required", null);
             response.setStatusCode(r.getStatusCode());
             response.getBody().write(objectMapper.writeValueAsBytes(r.getBody()));
 
@@ -51,7 +51,7 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
 
             return true;
         } catch (IllegalArgumentException | NullPointerException e) {
-            var r = new ApiResponseEntity<>(400, "Invalid token", null);
+            var r = new ApiResponse<>(400, "Invalid token", null);
             response.setStatusCode(r.getStatusCode());
             response.getBody().write(objectMapper.writeValueAsBytes(r.getBody()));
 

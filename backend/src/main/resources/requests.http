@@ -1,0 +1,67 @@
+### Регистрация
+POST http://localhost:55234/api/v1/auth/register
+Content-Type: application/json
+
+{
+  "username": "test_user4",
+  "passwordHash": "test_hashed_passssssssssssssssssssssssssssssssssssssssssssssword",
+  "publicKey": "test_public_keytest_public_keytest_public_keytest_public_keytest_public_key",
+  "encryptedPrivateKey": "test_encrypted_private_keytest_encrypted_private_keytest_encrypted_private_key"
+}
+
+### Вход
+POST http://localhost:55234/api/v1/auth/login
+Content-Type: application/json
+
+{
+  "username": "test_user4",
+  "passwordHash": "test_hashed_passssssssssssssssssssssssssssssssssssssssssssssword"
+}
+
+### Публикация сообщения Example API
+POST http://localhost:55234/api/v1/example
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+
+{
+  "owner": "test_owner",
+  "textMessage": "test_textMessage"
+}
+
+### Получение всех сообщений Example API
+GET http://localhost:55234/api/v1/example
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+
+### Получение сообщения по id Example API
+GET http://localhost:55234/api/v1/example/3
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+
+### Получение WebSocket токена
+POST http://localhost:55234/api/v1/auth/ws-token
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0OTY5NTYsInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXI0In0.S-aeWreSJXEsvllH1811cP4y60bouF0nnyEO-bTK6gg
+
+### Создание чата с пользователями (пользователь из jwt будет добавлен по умолчанию, имя чата игнорируется для диалога)
+POST http://localhost:55234/api/v1/chat
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0OTc1ODQsInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXI0In0.8AA0yLZ4QqbUJKzSXlAJxAQdDJaN9OdfgAG7CixPX00
+
+{
+  "chatName": "hello chat",
+  "usernames": [
+    "test_user4"
+  ]
+}
+
+### Получение списка всех чатов залогиненного пользователя
+GET http://localhost:55234/api/v1/user/chats
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+
+### Получение списка всех пользователей чата
+GET http://localhost:55234/api/v1/chat/9/users
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+
+### Получение информации о чате (в т. ч. name)
+GET http://localhost:55234/api/v1/chat/9
+Content-Type: application/json
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew

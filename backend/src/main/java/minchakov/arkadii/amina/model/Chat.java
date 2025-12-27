@@ -8,10 +8,14 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "chat")
@@ -19,13 +23,16 @@ public class Chat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "created_at")
+    @Column(name = "name", nullable = false)
+    private String name;
+
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
     @ManyToMany
@@ -34,16 +41,27 @@ public class Chat {
         joinColumns = @JoinColumn(name = "chat_id"),
         inverseJoinColumns = @JoinColumn(name = "user_id")
     )
-    private List<User> users;
+    private Set<User> users;
+
+    @OneToMany(mappedBy = "chat")
+    private List<Message> messages;
 
     public Chat() {
     }
 
-    public Chat(Integer id, LocalDateTime createdAt, LocalDateTime updatedAt, List<User> users) {
-        this.id = id;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.users = users;
+    public Chat(String name) {
+        this.name = name;
+    }
+
+    @PrePersist
+    private void setSavingTimestamp() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    private void setUpdatingTimestamp() {
+        updatedAt = LocalDateTime.now();
     }
 
     public Integer getId() {
@@ -52,6 +70,14 @@ public class Chat {
 
     public void setId(Integer id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -70,11 +96,19 @@ public class Chat {
         this.updatedAt = updatedAt;
     }
 
-    public List<User> getUsers() {
+    public Set<User> getUsers() {
         return users;
     }
 
-    public void setUsers(List<User> users) {
+    public void setUsers(Set<User> users) {
         this.users = users;
+    }
+
+    public List<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
     }
 }

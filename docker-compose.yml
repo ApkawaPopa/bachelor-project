@@ -32,6 +32,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       HIBERNATE_SHOW_SQL: ${BACKEND_SHOW_SQL}
       HIBERNATE_FORMAT_SQL: ${BACKEND_FORMAT_SQL}
+      LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
     networks:
       - backend
     restart: unless-stopped

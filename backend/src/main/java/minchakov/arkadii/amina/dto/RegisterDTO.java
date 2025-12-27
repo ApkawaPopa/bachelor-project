@@ -1,13 +1,23 @@
 package minchakov.arkadii.amina.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import org.hibernate.validator.constraints.Length;
+
 public class RegisterDTO {
 
+    @NotBlank(message = "Field cannot be blank")
     private String username;
 
+    @NotBlank(message = "Field cannot be blank")
+    @Length(min = 64, max = 64, message = "Length must be 64 symbols")
     private String passwordHash;
 
+    @NotBlank(message = "Field cannot be blank")
+    @Length(min = 64, message = "Length must be greater or equal to 64 symbols")
     private String publicKey;
 
+    @NotBlank(message = "Field cannot be blank")
+    @Length(min = 64, message = "Length must be greater or equal to 64 symbols")
     private String encryptedPrivateKey;
 
     public RegisterDTO() {

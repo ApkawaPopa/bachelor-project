@@ -1,28 +1,11 @@
 package minchakov.arkadii.amina.dto;
 
-public class ApiResponse<T> {
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.ResponseEntity;
 
-    private final int code;
-
-    private final String message;
-
-    private final T data;
+public class ApiResponse<T> extends ResponseEntity<ApiResponseBody<T>> {
 
     public ApiResponse(int code, String message, T data) {
-        this.code = code;
-        this.message = message;
-        this.data = data;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public T getData() {
-        return data;
+        super(new ApiResponseBody<>(code, message, data), HttpStatusCode.valueOf(code));
     }
 }

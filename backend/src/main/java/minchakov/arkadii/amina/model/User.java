@@ -6,12 +6,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "\"user\"")
@@ -41,29 +43,22 @@ public class User {
     private LocalDateTime updatedAt;
 
     @ManyToMany(mappedBy = "users")
-    private List<Chat> chats;
+    private Set<Chat> chats;
+
+    @OneToMany(mappedBy = "sender")
+    private List<Message> messages;
 
     public User() {
     }
 
     public User(
-        Integer id,
         String username,
-        String passwordHash,
-        String publicKey,
-        String encryptedPrivateKey,
-        LocalDateTime createdAt,
-        LocalDateTime updatedAt,
-        List<Chat> chats
+        String passwordHash, String publicKey, String encryptedPrivateKey
     ) {
-        this.id = id;
         this.username = username;
         this.passwordHash = passwordHash;
         this.publicKey = publicKey;
         this.encryptedPrivateKey = encryptedPrivateKey;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-        this.chats = chats;
     }
 
     @PrePersist
@@ -133,11 +128,19 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    public List<Chat> getChats() {
+    public Set<Chat> getChats() {
         return chats;
     }
 
-    public void setChats(List<Chat> chats) {
+    public void setChats(Set<Chat> chats) {
         this.chats = chats;
+    }
+
+    public List<Message> getMessages() {
+        return messages;
+    }
+
+    public void setMessages(List<Message> messages) {
+        this.messages = messages;
     }
 }

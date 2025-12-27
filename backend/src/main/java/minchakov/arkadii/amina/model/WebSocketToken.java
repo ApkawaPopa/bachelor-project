@@ -4,7 +4,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
 import java.util.UUID;
@@ -14,11 +14,11 @@ import java.util.UUID;
 public class WebSocketToken {
 
     @Id
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private UUID id;
 
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @OneToOne
+    @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
     public WebSocketToken() {

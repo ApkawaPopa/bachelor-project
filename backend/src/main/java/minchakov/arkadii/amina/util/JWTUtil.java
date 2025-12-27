@@ -1,4 +1,4 @@
-package minchakov.arkadii.amina;
+package minchakov.arkadii.amina.util;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;

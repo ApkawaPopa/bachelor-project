@@ -5,6 +5,10 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
@@ -15,23 +19,45 @@ public class Message {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id")
+    @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "sender_id")
-    private Integer senderId;
+    @ManyToOne
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
-    @Column(name = "chat_id")
-    private Integer chatId;
+    @ManyToOne
+    @JoinColumn(name = "chat_id", nullable = false)
+    private Chat chat;
 
-    @Column(name = "content")
-    private byte[] content;
+    @Column(name = "content", nullable = false)
+    private String content;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    public Message() {
+    }
+
+    public Message(User sender, Chat chat, String content) {
+        this.sender = sender;
+        this.chat = chat;
+        this.content = content;
+    }
+
+    @PrePersist
+    private void setSavingTimestamp() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+    }
+
+    @PreUpdate
+    private void setUpdatingTimestamp() {
+        updatedAt = LocalDateTime.now();
+    }
 
     public Integer getId() {
         return id;
@@ -41,27 +67,27 @@ public class Message {
         this.id = id;
     }
 
-    public Integer getSenderId() {
-        return senderId;
+    public User getSender() {
+        return sender;
     }
 
-    public void setSenderId(Integer senderId) {
-        this.senderId = senderId;
+    public void setSender(User sender) {
+        this.sender = sender;
     }
 
-    public Integer getChatId() {
-        return chatId;
+    public Chat getChat() {
+        return chat;
     }
 
-    public void setChatId(Integer chatId) {
-        this.chatId = chatId;
+    public void setChat(Chat chat) {
+        this.chat = chat;
     }
 
-    public byte[] getContent() {
+    public String getContent() {
         return content;
     }
 
-    public void setContent(byte[] content) {
+    public void setContent(String content) {
         this.content = content;
     }
 

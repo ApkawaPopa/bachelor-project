@@ -1,14 +1,18 @@
-package minchakov.arkadii.amina;
+package minchakov.arkadii.amina.filter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import minchakov.arkadii.amina.dto.ApiResponseBody;
 import minchakov.arkadii.amina.repository.UserRepository;
+import minchakov.arkadii.amina.util.JWTUtil;
+import minchakov.arkadii.amina.util.JwtAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 
@@ -17,10 +21,12 @@ public class JWTFilter extends OncePerRequestFilter {
 
     private final JWTUtil jWTUtil;
     private final UserRepository userRepository;
+    private final ObjectMapper objectMapper;
 
-    public JWTFilter(JWTUtil jWTUtil, UserRepository userRepository) {
+    public JWTFilter(JWTUtil jWTUtil, UserRepository userRepository, ObjectMapper objectMapper) {
         this.jWTUtil = jWTUtil;
         this.userRepository = userRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -41,18 +47,26 @@ public class JWTFilter extends OncePerRequestFilter {
                     var userOpt = userRepository.findByUsername(username);
                     if (userOpt.isEmpty()) {
                         System.out.println("С валидным токеном нет юзера");
-                        response.sendError(500, "User not found with verified JWT Token");
+                        var r = new ApiResponseBody<>(500, "User not found with verified JWT Token", null);
+                        response.setStatus(r.code());
+                        response.getWriter().write(objectMapper.writeValueAsString(r));
+                        return;
                     } else {
                         var user = userOpt.get();
-                        var authenticationToken = new CustomAuthenticationToken(user);
-                        SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                        var authenticationToken = new JwtAuthenticationToken(user);
+                        var newContext = SecurityContextHolder.createEmptyContext();
+                        newContext.setAuthentication(authenticationToken);
+                        SecurityContextHolder.setContext(newContext);
                     }
                 }
                 System.out.println("Успех");
             } catch (JWTVerificationException e) {
                 System.out.println("Невалидный токен найден");
-                response.sendError(401, "Invalid JWT Token");
+                var r = new ApiResponseBody<>(401, "Invalid JWT Token", null);
+                response.setStatus(r.code());
+                response.getWriter().write(objectMapper.writeValueAsString(r));
                 SecurityContextHolder.clearContext();
+                return;
             }
         } else {
             SecurityContextHolder.clearContext();
