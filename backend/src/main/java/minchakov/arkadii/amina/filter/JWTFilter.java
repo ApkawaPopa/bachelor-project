@@ -39,9 +39,9 @@ public class JWTFilter extends OncePerRequestFilter {
             String jwtToken = authHeader.substring(7);
 
             try {
-                var decodedJwtToken = jWTUtil.verifyJwtToken(jwtToken);
+                var decodedJwtToken = jWTUtil.verifyJwt(jwtToken);
 
-                var username = decodedJwtToken.getClaim("username").asString();
+                var username = decodedJwtToken.getSubject();
 
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     var userOpt = userRepository.findByUsername(username);

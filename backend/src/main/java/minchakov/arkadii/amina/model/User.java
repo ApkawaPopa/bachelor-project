@@ -13,6 +13,7 @@ import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -51,10 +52,7 @@ public class User {
     public User() {
     }
 
-    public User(
-        String username,
-        String passwordHash, String publicKey, String encryptedPrivateKey
-    ) {
+    public User(String username, String passwordHash, String publicKey, String encryptedPrivateKey) {
         this.username = username;
         this.passwordHash = passwordHash;
         this.publicKey = publicKey;
@@ -142,5 +140,17 @@ public class User {
 
     public void setMessages(List<Message> messages) {
         this.messages = messages;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof User user))
+            return false;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
     }
 }

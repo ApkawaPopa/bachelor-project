@@ -14,7 +14,6 @@ import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.validator.ChatCreateDTOValidator;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,11 +21,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
 import java.util.List;
 
-@Controller
+@RestController
 @Transactional
 @RequestMapping("/api/v1/chat")
 public class ChatController {
@@ -51,14 +51,13 @@ public class ChatController {
     @PostMapping
     @Transactional
     public ApiResponse<Integer> create(
-        @RequestBody @Valid ChatCreateDTO chatCreateDTO,
-        BindingResult result,
+        @RequestBody @Valid ChatCreateDTO chatCreateDTO, BindingResult errors,
         @AuthenticationPrincipal User currentUser
     ) {
-        chatCreateDTOValidator.validate(chatCreateDTO, result);
+        chatCreateDTOValidator.validate(chatCreateDTO, errors);
 
-        if (result.hasErrors()) {
-            throw new DtoValidationException(result);
+        if (errors.hasErrors()) {
+            throw new DtoValidationException(errors);
         }
 
         // TODO: поменять логику заполнения имени чата
@@ -110,7 +109,11 @@ public class ChatController {
             if (currentUser.getChats().contains(requestedChat)) {
                 var messages = requestedChat.getMessages()
                                             .stream()
-                                            .map(m -> modelMapper.map(m, ReadChatMessageDTO.class))
+                                            .map(m -> new ReadChatMessageDTO(
+                                                m.getContent(),
+                                                m.getSender().getUsername(),
+                                                m.getCreatedAt()
+                                            ))
                                             .toList();
                 var dto = new ReadChatDTO(requestedChat.getName(), messages);
                 return new ApiResponse<>(200, "Success", dto);

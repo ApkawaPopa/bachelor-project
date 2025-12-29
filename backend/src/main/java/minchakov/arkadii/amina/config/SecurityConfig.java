@@ -25,9 +25,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JWTFilter jWTFilter) {
         return http.authorizeHttpRequests(auth -> auth.requestMatchers(
                                                           "/api/v1/auth/login",
-                                                          "/api/v1/auth/register",
-                                                          "/ws/chat/**",
-                                                          "/ws/chat",
+                                                          "/api/v1/auth/register", "/ws/**", "/ws",
                                                           "/error"
                                                       )
                                                       .permitAll()
@@ -35,10 +33,6 @@ public class SecurityConfig {
                                                       .authenticated())
                    .csrf(AbstractHttpConfigurer::disable)
                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                   .formLogin(AbstractHttpConfigurer::disable)
-                   .httpBasic(AbstractHttpConfigurer::disable)
-                   .logout(AbstractHttpConfigurer::disable)
-                   .anonymous(AbstractHttpConfigurer::disable)
                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                    .addFilterAfter(jWTFilter, LogoutFilter.class)
                    .build();

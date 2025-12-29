@@ -1,67 +1,242 @@
-### Регистрация
-POST http://localhost:55234/api/v1/auth/register
+### Зарегистрироваться
+POST http://{{host}}:{{port}}/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "username": "test_user4",
-  "passwordHash": "test_hashed_passssssssssssssssssssssssssssssssssssssssssssssword",
-  "publicKey": "test_public_keytest_public_keytest_public_keytest_public_keytest_public_key",
-  "encryptedPrivateKey": "test_encrypted_private_keytest_encrypted_private_keytest_encrypted_private_key"
+  "username": "username",
+  "passwordHash": "passsssssssssssssssssssssssssssssssssssssssssssssssssssswordHash",
+  "publicKey": "publicKeypublicKeypublicKeypublicKeypublicKeypublicKeypublicKeypublicKey",
+  "encryptedPrivateKey": "privateKeyprivateKeyprivateKeyprivateKeyprivateKeyprivateKeyprivateKey"
 }
 
-### Вход
-POST http://localhost:55234/api/v1/auth/login
+###
+#{
+#  "code": 201,
+#  "message": "Created",
+#  "data": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VybmFtZTEiLCJleHAiOjE3Njk2OTUwMTl9.DEgSidWavE-V--XSV99GckHhM7d05VV-VUMVxK7ki5U" // jwt
+#}
+
+
+### Войти
+POST http://{{host}}:{{port}}/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "test_user4",
-  "passwordHash": "test_hashed_passssssssssssssssssssssssssssssssssssssssssssssword"
+  "username": "username",
+  "passwordHash": "passsssssssssssssssssssssssssssssssssssssssssssssssssssswordHash"
 }
 
-### Публикация сообщения Example API
-POST http://localhost:55234/api/v1/example
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VybmFtZTEiLCJleHAiOjE3Njk2OTUwODZ9.XNXR0lqYoyB8F3MlP3fcohYMPX9y1sjpfhuTJ4wvrKA" // jwt
+#}
+
+
+### Опубликовать сообщение Example API
+POST http://{{host}}:{{port}}/api/v1/example
 Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+Authorization: Bearer {{jwt}}
 
 {
   "owner": "test_owner",
   "textMessage": "test_textMessage"
 }
 
-### Получение всех сообщений Example API
-GET http://localhost:55234/api/v1/example
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+###
+#{
+#  "code": 201,
+#  "message": "Success",
+#  "data": 5 // id нового добавленного сообщения Example API
+#}
 
-### Получение сообщения по id Example API
-GET http://localhost:55234/api/v1/example/3
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+### Получить все сообщения Example API
+GET http://{{host}}:{{port}}/api/v1/example
+Authorization: Bearer {{jwt}}
 
-### Получение WebSocket токена
-POST http://localhost:55234/api/v1/auth/ws-token
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0OTY5NTYsInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXI0In0.S-aeWreSJXEsvllH1811cP4y60bouF0nnyEO-bTK6gg
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": [
+#    {
+#      "id": 1,
+#      "owner": "test_owner",
+#      "textMessage": "test_textMessage"
+#    },
+#    ...,
+#    {
+#      "id": 5,
+#      "owner": "test_owner",
+#      "textMessage": "test_textMessage"
+#    }
+#  ] // список сообщений Example API
+#}
 
-### Создание чата с пользователями (пользователь из jwt будет добавлен по умолчанию, имя чата игнорируется для диалога)
-POST http://localhost:55234/api/v1/chat
+
+### Получить сообщение по {{id}} Example API
+GET http://{{host}}:{{port}}/api/v1/example/{{exampleId}}
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": {
+#    "id": 2,
+#    "owner": "test_owner",
+#    "textMessage": "test_textMessage1"
+#  } // сообщение Example API по {{id}}
+#}
+
+### Получить токен для подключения к вебсокету
+POST http://{{host}}:{{port}}/api/v1/auth/ws-token
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 201,
+#  "message": "Created",
+#  "data": "9c623f1f-9a3c-4a7a-8d84-4d59f6a3dab2" // токен для подключения к http://{{host}}:{{port}}/ws?token=
+#}
+
+### Создать чат
+POST http://{{host}}:{{port}}/api/v1/chat
 Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0OTc1ODQsInVzZXJJZCI6NSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXI0In0.8AA0yLZ4QqbUJKzSXlAJxAQdDJaN9OdfgAG7CixPX00
+Authorization: Bearer {{jwt}}
 
 {
-  "chatName": "hello chat",
+  "chatName": "Hello chat",
   "usernames": [
-    "test_user4"
+    "username",
+    "test_user",
+    "test_user1"
   ]
 }
 
-### Получение списка всех чатов залогиненного пользователя
-GET http://localhost:55234/api/v1/user/chats
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+###
+#{
+#  "code": 201,
+#  "message": "Чат успешно создан",
+#  "data": 26 // id созданного чата
+#}
 
-### Получение списка всех пользователей чата
-GET http://localhost:55234/api/v1/chat/9/users
-Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
 
-### Получение информации о чате (в т. ч. name)
-GET http://localhost:55234/api/v1/chat/9
+### Получить информацию о чате по {{id}} // лучше использовать GET /api/v1/chat/{{chatId}}/message
+GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": {
+#    "name": "Brothers",
+#    "messages": [
+#      {
+#        "content": "test",
+#        "sender": "Apkawa",
+#        "createdAt": "2025-12-29T14:28:00.369663"
+#      },
+#      {
+#        "content": "asdsfs",
+#        "sender": "Apkawa",
+#        "createdAt": "2025-12-29T14:25:51.391017"
+#      }
+#    ]
+#  }
+#}
+
+### Получить список пользователей чата
+GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/users
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": [
+#    {
+#      "id": 16,
+#      "username": "Tema"
+#    },
+#    {
+#      "id": 15,
+#      "username": "Apkawa"
+#    }
+#  ]
+#}
+
+### Получить список чатов пользователя с последними сообщениями в порядке даты последнего сообщения
+GET http://{{host}}:{{port}}/api/v1/user/chats
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": [
+#    {
+#      "id": 25,
+#      "name": "Brothers",
+#      "messageContent": "Да да привет",
+#      "messageCreatedAt": "2025-12-29T14:38:11.811434" // самое позднее
+#    },
+#    {
+#      "id": 27,
+#      "name": "Brothers3",
+#      "messageContent": "adsad hello",
+#      "messageCreatedAt": "2025-12-29T14:36:49.828212" // самое раннее
+#    }
+#  ]
+#}
+
+### Получить список всех сообщений чата в порядке даты сообщения
+GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message
+Authorization: Bearer {{jwt}}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": [
+#    {
+#      "sender": "Apkawa",
+#      "content": "asdsfs",
+#      "createdAt": "2025-12-29T14:25:51.391017" // самое раннее сообщение
+#    },
+#    {
+#      "sender": "Apkawa",
+#      "content": "test",
+#      "createdAt": "2025-12-29T14:28:00.369663"
+#    },
+#    {
+#      "sender": "Tema",
+#      "content": "Привет всем",
+#      "createdAt": "2025-12-29T14:38:04.023132"
+#    },
+#    {
+#      "sender": "Apkawa",
+#      "content": "Да да привет",
+#      "createdAt": "2025-12-29T14:38:11.811434" // самое позднее сообщение
+#    }
+#  ]
+#}
+
+
+### Изменить сообщение по {{id}}
+PATCH http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message/{{messageId}}
 Content-Type: application/json
-Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3Njk0MzUzNDksInVzZXJJZCI6MSwidXNlcm5hbWUiOiJ0ZXN0X3VzZXIifQ.CG7y1V4Wkvi4Hbf5Ri43ZWOlY5HIloGEBT34m87U_Ew
+Authorization: Bearer {{jwt}}
+
+{
+  "content": "New content"
+}
+
+###
+#{ // пока что невозможно использовать, т.к. ты не знаешь id сообщений
+#  "code": 200,
+#  "message": "Success",
+#  "data": "2025-12-29T14:38:11.811444"
+#}

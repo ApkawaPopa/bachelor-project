@@ -35,7 +35,7 @@ services:
       LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
     networks:
       - backend
-    restart: unless-stopped
+#    restart: unless-stopped
 
 volumes:
   postgres-data:

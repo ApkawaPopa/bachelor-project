@@ -2,26 +2,20 @@ package minchakov.arkadii.amina.dto;
 
 import java.time.LocalDateTime;
 
-public class ReadChatMessageDTO {
+public class GetMessageDTO {
+    private String sender;
 
     private String content;
 
-    private String sender;
-
     private LocalDateTime createdAt;
 
-    public ReadChatMessageDTO(String content, String sender, LocalDateTime createdAt) {
-        this.content = content;
+    public GetMessageDTO() {
+    }
+
+    public GetMessageDTO(String sender, String content, LocalDateTime createdAt) {
         this.sender = sender;
-        this.createdAt = createdAt;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
         this.content = content;
+        this.createdAt = createdAt;
     }
 
     public String getSender() {
@@ -30,6 +24,14 @@ public class ReadChatMessageDTO {
 
     public void setSender(String sender) {
         this.sender = sender;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 
     public LocalDateTime getCreatedAt() {

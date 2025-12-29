@@ -1,27 +1,1086 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Page</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <title>AminA</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            gap: 20px;
+            height: 90vh;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .auth-panel {
+            grid-column: 1 / -1;
+            max-width: 500px;
+            margin: 50px auto;
+        }
+
+        h1, h2 {
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        input, textarea, select, button {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        button.secondary {
+            background: #6c757d;
+        }
+
+        button.secondary:hover {
+            background: #5a6268;
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.4);
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .chat-list {
+            flex: 1;
+            overflow-y: auto;
+            margin: 15px 0;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .chat-item {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            margin-bottom: 5px;
+        }
+
+        .chat-item:hover {
+            background: #f8f9fa;
+        }
+
+        .chat-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .chat-item:last-child {
+            border-bottom: none;
+        }
+
+        .message-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            background: #f9f9f9;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 12px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.sent {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.received {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message-header {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .message-content {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .user-item {
+            padding: 10px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-item:last-child {
+            border-bottom: none;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .form-row input {
+            flex: 1;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #main-app {
+            display: contents;
+        }
+
+        .tab-switcher {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab:hover {
+            color: #667eea;
+            background: #f8f9fa;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            font-weight: 600;
+        }
+
+        .chat-creation-form {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<div class="container auth-panel" id="auth-panel">
+    <div class="panel">
+        <h1>Амина Мессенджер</h1>
+
+        <div class="tab-switcher">
+            <div class="tab active" onclick="switchTab('login')">Вход</div>
+            <div class="tab" onclick="switchTab('register')">Регистрация</div>
+        </div>
+
+        <div class="section" id="login-form">
+            <h2>Вход в систему</h2>
+            <div class="form-group">
+                <label>Логин:</label>
+                <input id="login-username" placeholder="Введите ваш логин" type="text">
+            </div>
+            <div class="form-group">
+                <label>Пароль:</label>
+                <input id="login-password" placeholder="Введите пароль" type="password">
+            </div>
+            <button onclick="login()">Войти</button>
+        </div>
+
+        <div class="section hidden" id="register-form">
+            <h2>Регистрация нового пользователя</h2>
+            <div class="form-group">
+                <label>Логин:</label>
+                <input id="reg-username" placeholder="Придумайте логин" type="text">
+            </div>
+            <div class="form-group">
+                <label>Пароль:</label>
+                <input id="reg-password" placeholder="Придумайте пароль" type="password">
+                <small style="color: #666; font-size: 12px;">На клиенте будет вычислен SHA-256 хеш</small>
+            </div>
+            <div class="form-group">
+                <label>Публичный ключ:</label>
+                <input id="reg-public-key" placeholder="Минимум 64 символа" type="text">
+            </div>
+            <div class="form-group">
+                <label>Зашифрованный приватный ключ:</label>
+                <input id="reg-private-key" placeholder="Минимум 64 символа" type="text">
+            </div>
+            <button onclick="register()">Зарегистрироваться</button>
+        </div>
+    </div>
+</div>
+
+<div class="container hidden" id="main-app">
+    <div class="panel">
+        <h2>Мои чаты</h2>
+
+        <div class="status disconnected" id="connection-status">
+            ❌ WebSocket отключен
+        </div>
+
+        <div id="user-info" style="text-align: center; margin-bottom: 15px; color: #666;">
+            Пользователь: <span id="current-username"></span>
+        </div>
+
+        <div id="chat-creation" style="margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                <button class="secondary" onclick="toggleChatCreation()" style="flex: 1;">Создать новый чат</button>
+                <button class="secondary" onclick="refreshChats()" style="flex: 1;">Обновить список</button>
+            </div>
+
+            <div class="chat-creation-form hidden" id="chat-creation-form">
+                <div class="form-group">
+                    <label>Название чата:</label>
+                    <input id="new-chat-name" placeholder="Введите название чата" type="text">
+                </div>
+                <div class="form-group">
+                    <label>Участники (через запятую):</label>
+                    <input id="new-chat-users" placeholder="user1, user2, user3" type="text">
+                    <small style="color: #666; font-size: 12px;">Введите логины других пользователей через
+                                                                 запятую</small>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="createChat()">Создать чат</button>
+                    <button class="secondary" onclick="toggleChatCreation()">Отмена</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-list" id="chat-list">
+            <div style="text-align: center; color: #666; padding: 40px 20px;">
+                <p>У вас пока нет чатов</p>
+                <p style="font-size: 12px; margin-top: 10px;">Создайте новый чат или вас добавят в существующий</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Сообщения</h2>
+
+        <div id="current-chat-name" style="text-align: center; color: #666; margin-bottom: 15px; font-weight: 500;">
+            Выберите чат
+        </div>
+
+        <div id="chat-info" style="text-align: center; color: #999; font-size: 12px; margin-bottom: 10px;">
+            ID: <span id="current-chat-id">-</span>
+        </div>
+
+        <div class="message-list" id="message-list">
+            <div style="text-align: center; color: #666; padding: 40px 20px;">
+                <p>Выберите чат для просмотра сообщений</p>
+            </div>
+        </div>
+
+        <div id="message-input-section" style="display: none;">
+            <div class="form-row">
+                <input autocomplete="off" id="new-message" placeholder="Введите сообщение..." type="text">
+                <button id="send-button" onclick="sendMessage()">Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="panel">
+        <h2>Участники чата</h2>
+
+        <div class="users-list" id="current-chat-users">
+            <div style="text-align: center; color: #666; padding: 40px 20px;">
+                <p>Выберите чат</p>
+                <p style="font-size: 12px; margin-top: 10px;">Список участников появится здесь</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>Действия</h3>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button class="secondary" onclick="refreshChatUsers()">Обновить участников</button>
+                <button class="secondary" onclick="refreshMessages()">Обновить сообщения</button>
+                <button class="secondary" onclick="logout()">Выйти из системы</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Библиотеки -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.6.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7.0.0/bundles/stomp.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
 <script>
-    var sock = new SockJS('http://localhost:55234/ws/chat?token=150961f5-8818-4487-b591-c66a55a1d863');
+    // Конфигурация
+    const API_BASE = 'http://localhost:55234/api/v1';
+    const WS_URL = 'http://localhost:55234/ws';
 
-    sock.onopen = function () {
-        console.log('open');
-        sock.send('test');
-    };
+    // Глобальные переменные
+    let currentUsername = null;
+    let jwtToken = null;
+    let wsToken = null;
+    let stompClient = null;
+    let currentChatId = null;
+    let currentChatName = null;
+    let chats = [];
+    let currentChatSubscription = null;
 
-    sock.onmessage = function (e) {
-        console.log('message', e.data);
-        sock.close();
-    };
+    // ========== ХЕШИРОВАНИЕ ==========
+    function sha256(message) {
+        return CryptoJS.SHA256(message).toString();
+        // return message;
+    }
 
-    sock.onclose = function () {
-        console.log('close');
-    };
+    // ========== УТИЛИТЫ ==========
+    function switchTab(tabName) {
+        $('.tab').removeClass('active');
+        $(`#login-form, #register-form`).addClass('hidden');
+
+        if (tabName === 'login') {
+            $('.tab:first-child').addClass('active');
+            $('#login-form').removeClass('hidden');
+        } else {
+            $('.tab:last-child').addClass('active');
+            $('#register-form').removeClass('hidden');
+        }
+    }
+
+    function toggleChatCreation() {
+        $('#chat-creation-form').toggleClass('hidden');
+        if (!$('#chat-creation-form').hasClass('hidden')) {
+            $('#new-chat-name').focus();
+        }
+    }
+
+    // ========== АВТОРИЗАЦИЯ ==========
+    async function register() {
+        const username = $('#reg-username').val();
+        const password = $('#reg-password').val();
+        const publicKey = $('#reg-public-key').val();
+        const encryptedPrivateKey = $('#reg-private-key').val();
+
+        if (!username || !password || !publicKey || !encryptedPrivateKey) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        if (publicKey.length < 64 || encryptedPrivateKey.length < 64) {
+            alert('Публичный и приватный ключи должны быть не менее 64 символов');
+            return;
+        }
+
+        const passwordHash = sha256(password);
+
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/auth/register`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    username,
+                    passwordHash,
+                    publicKey,
+                    encryptedPrivateKey
+                })
+            });
+
+            if (response.data) {
+                jwtToken = response.data;
+                localStorage.setItem('jwtToken', jwtToken);
+                localStorage.setItem('username', username);
+                currentUsername = username;
+
+                console.log('Регистрация успешна');
+                await afterSuccessfulAuth();
+            } else {
+                alert('Ошибка регистрации: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Ошибка регистрации:', error);
+            const errorMessage = error.responseJSON?.message || error.statusText || 'Неизвестная ошибка';
+            alert('Ошибка регистрации: ' + errorMessage);
+        }
+    }
+
+    async function login() {
+        const username = $('#login-username').val();
+        const password = $('#login-password').val();
+
+        if (!username || !password) {
+            alert('Заполните все поля');
+            return;
+        }
+
+        const passwordHash = sha256(password);
+
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/auth/login`,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    username,
+                    passwordHash
+                })
+            });
+
+            if (response.data) {
+                jwtToken = response.data;
+                localStorage.setItem('jwtToken', jwtToken);
+                localStorage.setItem('username', username);
+                currentUsername = username;
+
+                console.log('Вход успешен');
+                await afterSuccessfulAuth();
+            } else {
+                alert('Ошибка входа: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Ошибка входа:', error);
+            const errorMessage = error.responseJSON?.message || error.statusText || 'Неизвестная ошибка';
+            alert('Ошибка входа: ' + errorMessage);
+        }
+    }
+
+    async function getWsToken() {
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/auth/ws-token`,
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            if (response.data) {
+                wsToken = response.data;
+                console.log('WebSocket токен получен');
+            } else {
+                throw new Error('Ошибка получения WS токена: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Ошибка получения WS токена:', error);
+            throw error;
+        }
+    }
+
+    async function afterSuccessfulAuth() {
+        try {
+            // Обновляем отображение имени пользователя
+            currentUsername = localStorage.getItem('username');
+            $('#current-username').text(currentUsername || 'Неизвестно');
+
+            // Получаем WebSocket токен
+            await getWsToken();
+
+            // Загружаем данные пользователя
+            await loadUserData();
+
+            // Показываем основное приложение
+            $('#auth-panel').addClass('hidden');
+            $('#main-app').removeClass('hidden');
+
+            // Подключаемся к WebSocket
+            connectWebSocket();
+        } catch (error) {
+            console.error('Ошибка после аутентификации:', error);
+            alert('Ошибка после аутентификации: ' + error.message);
+        }
+    }
+
+    // ========== ЗАГРУЗКА ДАННЫХ ==========
+    async function loadUserData() {
+        try {
+            // Загружаем чаты пользователя
+            const response = await $.ajax({
+                url: `${API_BASE}/user/chats`,
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            if (response.data) {
+                chats = response.data;
+                renderChatList();
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки чатов:', error);
+            showError('Ошибка загрузки чатов: ' + (error.responseJSON?.message || error.statusText));
+        }
+    }
+
+    async function loadChatMessages(chatId) {
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/chat/${chatId}`,
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            if (response.data) {
+                renderMessages(response.data.messages || []);
+                // Загружаем участников чата
+                await loadChatUsers(chatId);
+            } else {
+                showError('Ошибка загрузки сообщений: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки сообщений:', error);
+            showError('Ошибка загрузки сообщений: ' + (error.responseJSON?.message || error.statusText));
+        }
+    }
+
+    async function loadChatUsers(chatId) {
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/chat/${chatId}/users`,
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                }
+            });
+
+            if (response.data) {
+                renderChatUsers(response.data);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки участников:', error);
+            showError('Не удалось загрузить участников чата');
+        }
+    }
+
+    // ========== СОЗДАНИЕ ЧАТА ==========
+    async function createChat() {
+        const chatName = $('#new-chat-name').val();
+        const usersInput = $('#new-chat-users').val();
+
+        if (!chatName) {
+            alert('Введите название чата');
+            return;
+        }
+
+        if (!usersInput) {
+            alert('Введите логины участников');
+            return;
+        }
+
+        const usernameList = usersInput.split(',').map(u => u.trim()).filter(u => u);
+
+        try {
+            const response = await $.ajax({
+                url: `${API_BASE}/chat`,
+                method: 'POST',
+                contentType: 'application/json',
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`
+                },
+                data: JSON.stringify({
+                    chatName,
+                    usernames: usernameList
+                })
+            });
+
+            if (response.data) {
+                alert('Чат создан! ID: ' + response.data);
+                // Очищаем поля формы
+                $('#new-chat-name').val('');
+                $('#new-chat-users').val('');
+                $('#chat-creation-form').addClass('hidden');
+
+                // Обновляем список чатов
+                await loadUserData();
+            } else {
+                alert('Ошибка создания чата: ' + response.message);
+            }
+        } catch (error) {
+            console.error('Ошибка создания чата:', error);
+            const errorMessage = error.responseJSON?.message || error.statusText || 'Неизвестная ошибка';
+            alert('Ошибка создания чата: ' + errorMessage);
+        }
+    }
+
+    // ========== WEB SOCKET ==========
+    function connectWebSocket() {
+        if (!wsToken) {
+            showError('Нет WebSocket токена');
+            return;
+        }
+
+        const socket = new SockJS(`${WS_URL}?token=${wsToken}`);
+        stompClient = Stomp.over(socket);
+
+        // Отключаем отладку
+        stompClient.debug = null;
+
+        stompClient.connect({}, function (frame) {
+            console.log('WebSocket подключен:', frame);
+
+            $('#connection-status')
+                .removeClass('disconnected')
+                .addClass('connected')
+                .html('✅ WebSocket подключен');
+
+            // Подписываемся на ошибки
+            stompClient.subscribe('/user/queue/errors', function (message) {
+                const error = JSON.parse(message.body);
+                console.error('STOMP ошибка:', error);
+                showError('WebSocket ошибка: ' + error.message);
+            });
+
+        }, function (error) {
+            console.error('WebSocket ошибка:', error);
+
+            $('#connection-status')
+                .removeClass('connected')
+                .addClass('disconnected')
+                .html('❌ WebSocket отключен');
+
+            // Пробуем переподключиться через 5 секунд
+            setTimeout(connectWebSocket, 5000);
+        });
+    }
+
+    function subscribeToChat(chatId) {
+        if (!stompClient || !stompClient.connected) {
+            showError('WebSocket не подключен');
+            return;
+        }
+
+        // Отписываемся от старого чата
+        if (currentChatSubscription) {
+            currentChatSubscription.unsubscribe();
+        }
+
+        currentChatId = chatId;
+
+        // Подписываемся на новый чат
+        currentChatSubscription = stompClient.subscribe(`/topic/chat/${chatId}`, function (message) {
+            try {
+                const newMessage = JSON.parse(message.body);
+                addMessageToUI(newMessage, false);
+            } catch (e) {
+                console.error('Ошибка обработки сообщения:', e);
+            }
+        });
+
+        // Включаем поле ввода сообщений
+        $('#message-input-section').show();
+        $('#new-message').prop('disabled', false).focus();
+        $('#send-button').prop('disabled', false);
+    }
+
+    function sendMessage() {
+        if (!stompClient || !stompClient.connected) {
+            showError('WebSocket не подключен');
+            return;
+        }
+
+        if (!currentChatId) {
+            showError('Выберите чат');
+            return;
+        }
+
+        const content = $('#new-message').val();
+        if (!content.trim()) {
+            showError('Введите сообщение');
+            return;
+        }
+
+        const message = {
+            content: content
+        };
+
+        try {
+            stompClient.send(`/app/chat/${currentChatId}/message/post`, {}, JSON.stringify(message));
+
+            // Добавляем сообщение в UI сразу
+            addMessageToUI({
+                username: currentUsername,
+                content: content,
+                createdAt: new Date().toISOString()
+            }, true);
+
+            $('#new-message').val('').focus();
+        } catch (error) {
+            console.error('Ошибка отправки сообщения:', error);
+            showError('Не удалось отправить сообщение');
+        }
+    }
+
+    // ========== UI РЕНДЕРИНГ ==========
+    function renderChatList() {
+        const chatList = $('#chat-list');
+        chatList.empty();
+
+        if (chats.length === 0) {
+            chatList.html(`
+                <div style="text-align: center; color: #666; padding: 40px 20px;">
+                    <p>У вас пока нет чатов</p>
+                    <p style="font-size: 12px; margin-top: 10px;">Создайте новый чат или вас добавят в существующий</p>
+                </div>
+            `);
+            return;
+        }
+
+        chats.forEach(chat => {
+            const chatItem = $(`
+                <div class="chat-item" data-chat-id="${chat.id}">
+                    <div style="font-weight: 600;">${chat.name}</div>
+                    <div style="font-size: 12px; color: #666;">ID: ${chat.id}</div>
+                </div>
+            `);
+
+            chatItem.click(function () {
+                $('.chat-item').removeClass('active');
+                chatItem.addClass('active');
+                selectChat(chat.id, chat.name);
+            });
+
+            chatList.append(chatItem);
+        });
+    }
+
+    function selectChat(chatId, chatName) {
+        currentChatId = chatId;
+        currentChatName = chatName;
+
+        $('#current-chat-name').text(chatName);
+        $('#current-chat-id').text(chatId);
+
+        // Подписываемся на чат в WebSocket
+        subscribeToChat(chatId);
+
+        // Загружаем сообщения
+        loadChatMessages(chatId);
+    }
+
+    function renderMessages(messages) {
+        const messageList = $('#message-list');
+        messageList.empty();
+
+        if (messages.length === 0) {
+            messageList.html(`
+                <div style="text-align: center; color: #666; padding: 40px 20px;">
+                    <p>В этом чате пока нет сообщений</p>
+                    <p style="font-size: 12px; margin-top: 10px;">Начните общение первым</p>
+                </div>
+            `);
+            return;
+        }
+
+        // Сортируем сообщения по времени
+        messages.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+        messages.forEach(message => {
+            const isSent = message.username === currentUsername;
+            addMessageToUI(message, isSent);
+        });
+    }
+
+    function addMessageToUI(message, isSent) {
+        const messageList = $('#message-list');
+
+        const time = message.createdAt ? new Date(message.createdAt).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        }) : 'только что';
+
+        const messageElement = $(`
+            <div class="message ${isSent ? 'sent' : 'received'}">
+                <div class="message-header">
+                    <span>${message.username || 'Неизвестный'}</span>
+                    <span>${time}</span>
+                </div>
+                <div class="message-content">${message.content || ''}</div>
+            </div>
+        `);
+
+        messageList.append(messageElement);
+        messageList.scrollTop(messageList[0].scrollHeight);
+    }
+
+    function renderChatUsers(users) {
+        const usersList = $('#current-chat-users');
+        usersList.empty();
+
+        if (users.length === 0) {
+            usersList.html(`
+                <div style="text-align: center; color: #666; padding: 40px 20px;">
+                    <p>Нет участников</p>
+                </div>
+            `);
+            return;
+        }
+
+        users.forEach(user => {
+            const userElement = $(`
+                <div class="user-item">
+                    <div>
+                        <span class="online-dot"></span>
+                        ${user.username}
+                    </div>
+                    <div style="font-size: 12px; color: #666;">ID: ${user.id}</div>
+                </div>
+            `);
+
+            usersList.append(userElement);
+        });
+    }
+
+    // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+    function refreshChats() {
+        loadUserData();
+        showInfo('Список чатов обновлен');
+    }
+
+    function refreshChatUsers() {
+        if (currentChatId) {
+            loadChatUsers(currentChatId);
+            showInfo('Список участников обновлен');
+        } else {
+            showError('Выберите чат');
+        }
+    }
+
+    function refreshMessages() {
+        if (currentChatId) {
+            loadChatMessages(currentChatId);
+            showInfo('Сообщения обновлены');
+        } else {
+            showError('Выберите чат');
+        }
+    }
+
+    function logout() {
+        if (confirm('Вы уверены, что хотите выйти?')) {
+            // Отключаем WebSocket
+            if (stompClient) {
+                stompClient.disconnect();
+            }
+
+            // Очищаем данные
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('username');
+            jwtToken = null;
+            currentUsername = null;
+            wsToken = null;
+            currentChatId = null;
+            chats = [];
+
+            // Показываем форму входа
+            $('#main-app').addClass('hidden');
+            $('#auth-panel').removeClass('hidden');
+            switchTab('login');
+
+            // Очищаем поля
+            $('#login-username').val('');
+            $('#login-password').val('');
+            $('#reg-username').val('');
+            $('#reg-password').val('');
+            $('#reg-public-key').val('');
+            $('#reg-private-key').val('');
+        }
+    }
+
+    function showError(message) {
+        console.error(message);
+        alert(message);
+    }
+
+    function showInfo(message) {
+        console.log(message);
+    }
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    $(document).ready(function () {
+        // Проверяем сохраненный токен
+        const savedToken = localStorage.getItem('jwtToken');
+        currentUsername = localStorage.getItem('username');
+
+        if (savedToken && currentUsername) {
+            jwtToken = savedToken;
+            $('#current-username').text(currentUsername);
+
+            // Автоматически входим с сохраненным токеном
+            $('#auth-panel').addClass('hidden');
+            $('#main-app').removeClass('hidden');
+
+            // Загружаем данные и подключаемся к WS
+            getWsToken().then(() => {
+                loadUserData();
+                connectWebSocket();
+            }).catch(error => {
+                console.error('Ошибка автоматического входа:', error);
+                // Если токен невалидный, удаляем его
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('username');
+                alert('Срок действия токена истек. Пожалуйста, войдите снова.');
+                $('#auth-panel').removeClass('hidden');
+                $('#main-app').addClass('hidden');
+            });
+        }
+
+        // Обработка нажатия Enter
+        $('#new-message').keypress(function (e) {
+            if (e.which === 13) { // Enter
+                sendMessage();
+                e.preventDefault();
+            }
+        });
+
+        $('#login-password').keypress(function (e) {
+            if (e.which === 13) login();
+        });
+
+        $('#reg-password').keypress(function (e) {
+            if (e.which === 13) register();
+        });
+
+        // Фокус на первое поле при переключении табов
+        $('.tab').click(function () {
+            setTimeout(() => {
+                if ($('#login-form:visible').length) {
+                    $('#login-username').focus();
+                } else if ($('#register-form:visible').length) {
+                    $('#reg-username').focus();
+                }
+            }, 100);
+        });
+    });
 </script>
 </body>
 </html>

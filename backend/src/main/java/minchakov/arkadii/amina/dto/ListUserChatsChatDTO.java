@@ -1,18 +1,22 @@
 package minchakov.arkadii.amina.dto;
 
+import java.time.LocalDateTime;
+
 public class ListUserChatsChatDTO {
 
     private int id;
     private String name;
-    private ListUserChatsMessageDTO message;
+    private String messageContent;
+    private LocalDateTime messageCreatedAt;
 
     public ListUserChatsChatDTO() {
     }
 
-    public ListUserChatsChatDTO(int id, String name, ListUserChatsMessageDTO message) {
+    public ListUserChatsChatDTO(int id, String name, String messageContent, LocalDateTime messageCreatedAt) {
         this.id = id;
         this.name = name;
-        this.message = message;
+        this.messageContent = messageContent;
+        this.messageCreatedAt = messageCreatedAt;
     }
 
     public int getId() {
@@ -31,11 +35,19 @@ public class ListUserChatsChatDTO {
         this.name = name;
     }
 
-    public ListUserChatsMessageDTO getMessage() {
-        return message;
+    public String getMessageContent() {
+        return messageContent;
     }
 
-    public void setMessage(ListUserChatsMessageDTO message) {
-        this.message = message;
+    public void setMessageContent(String messageContent) {
+        this.messageContent = messageContent;
+    }
+
+    public LocalDateTime getMessageCreatedAt() {
+        return messageCreatedAt;
+    }
+
+    public void setMessageCreatedAt(LocalDateTime messageCreatedAt) {
+        this.messageCreatedAt = messageCreatedAt;
     }
 }

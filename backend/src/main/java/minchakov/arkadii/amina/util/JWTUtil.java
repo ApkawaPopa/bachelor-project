@@ -16,15 +16,13 @@ public class JWTUtil {
     @Value("${jwt-secret}")
     private String JWT_SECRET;
 
-    public String createJwtToken(User user) {
-        return JWT.create()
-                  .withClaim("userId", user.getId())
-                  .withClaim("username", user.getUsername())
+    public String createJwt(User user) {
+        return JWT.create().withSubject(user.getUsername())
                   .withExpiresAt(LocalDateTime.now().plusDays(31).atZone(ZoneId.systemDefault()).toInstant())
                   .sign(Algorithm.HMAC256(JWT_SECRET));
     }
 
-    public DecodedJWT verifyJwtToken(String jwtToken) {
+    public DecodedJWT verifyJwt(String jwtToken) {
         var jwtVerifier = JWT.require(Algorithm.HMAC256(JWT_SECRET)).build();
         return jwtVerifier.verify(jwtToken);
     }

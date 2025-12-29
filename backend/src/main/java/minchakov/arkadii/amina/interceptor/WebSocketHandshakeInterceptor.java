@@ -10,6 +10,7 @@ import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 import tools.jackson.databind.ObjectMapper;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
 
@@ -41,22 +42,32 @@ public class WebSocketHandshakeInterceptor implements HandshakeInterceptor {
         }
 
         var tokenUUIDStr = query.substring(6);
+
+        UUID tokenUUID;
         try {
-            var tokenUUID = UUID.fromString(tokenUUIDStr);
-            var tokenOpt = webSocketTokenRepository.getWebSocketTokenById(tokenUUID);
-            var token = tokenOpt.get();
-            attributes.put("user", token.getUser());
-            System.out.println("Мы должны удалить токен: " + token);
-            webSocketTokenRepository.delete(token);
-
-            return true;
-        } catch (IllegalArgumentException | NullPointerException e) {
-            var r = new ApiResponse<>(400, "Invalid token", null);
-            response.setStatusCode(r.getStatusCode());
-            response.getBody().write(objectMapper.writeValueAsBytes(r.getBody()));
-
+            tokenUUID = UUID.fromString(tokenUUIDStr);
+        } catch (IllegalArgumentException e) {
+            send400("Not a valid UUID token: " + tokenUUIDStr, response);
             return false;
         }
+
+        var tokenOpt = webSocketTokenRepository.getWebSocketTokenById(tokenUUID);
+        if (tokenOpt.isEmpty()) {
+            send400("Token " + tokenUUIDStr + " not found", response);
+            return false;
+        }
+
+        var token = tokenOpt.get();
+        attributes.put("user", token.getUser());
+        webSocketTokenRepository.delete(token);
+
+        return true;
+    }
+
+    private void send400(String message, ServerHttpResponse response) throws IOException {
+        var r = new ApiResponse<>(400, message, null);
+        response.setStatusCode(r.getStatusCode());
+        response.getBody().write(objectMapper.writeValueAsBytes(r.getBody()));
     }
 
     @Override

@@ -5,8 +5,8 @@ import org.springframework.validation.BindingResult;
 public class DtoValidationException extends RuntimeException {
     private final BindingResult result;
 
-    public DtoValidationException(BindingResult result) {
-        this.result = result;
+    public DtoValidationException(BindingResult errors) {
+        this.result = errors;
     }
 
     public BindingResult getResult() {
