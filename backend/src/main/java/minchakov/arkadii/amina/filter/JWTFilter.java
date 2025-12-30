@@ -5,7 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import minchakov.arkadii.amina.dto.ApiResponseBody;
+import minchakov.arkadii.amina.dto.RestResponseBody;
 import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.util.JWTUtil;
 import minchakov.arkadii.amina.util.JwtAuthenticationToken;
@@ -47,8 +47,9 @@ public class JWTFilter extends OncePerRequestFilter {
                     var userOpt = userRepository.findByUsername(username);
                     if (userOpt.isEmpty()) {
                         System.out.println("С валидным токеном нет юзера");
-                        var r = new ApiResponseBody<>(500, "User not found with verified JWT Token", null);
+                        var r = new RestResponseBody<>(500, "User not found with verified JWT Token", null);
                         response.setStatus(r.code());
+                        response.addHeader("Content-Type", "application/json");
                         response.getWriter().write(objectMapper.writeValueAsString(r));
                         return;
                     } else {
@@ -62,8 +63,9 @@ public class JWTFilter extends OncePerRequestFilter {
                 System.out.println("Успех");
             } catch (JWTVerificationException e) {
                 System.out.println("Невалидный токен найден");
-                var r = new ApiResponseBody<>(401, "Invalid JWT Token", null);
+                var r = new RestResponseBody<>(401, "Invalid JWT Token", null);
                 response.setStatus(r.code());
+                response.addHeader("Content-Type", "application/json");
                 response.getWriter().write(objectMapper.writeValueAsString(r));
                 SecurityContextHolder.clearContext();
                 return;

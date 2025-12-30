@@ -1,62 +1,64 @@
 package minchakov.arkadii.amina.controller.advice;
 
-import jakarta.servlet.http.HttpServletRequest;
-import minchakov.arkadii.amina.dto.ApiResponse;
+import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.dto.StompResponse;
-import minchakov.arkadii.amina.exception.DtoValidationException;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.SendToUser;
-import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.nio.file.AccessDeniedException;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-@ControllerAdvice(basePackages = {"minchakov.arkadii.amina.controller"})
+@RestControllerAdvice
 public class GlobalControllerAdvice {
 
-    private final SimpMessagingTemplate simpMessagingTemplate;
-
-    public GlobalControllerAdvice(SimpMessagingTemplate simpMessagingTemplate) {
-        this.simpMessagingTemplate = simpMessagingTemplate;
+    @ExceptionHandler
+    public RestResponse<Map<String, List<String>>> handleValidationErrors(MethodArgumentNotValidException e) {
+        Map<String, List<String>> errors = e.getBindingResult().getFieldErrors().stream().collect(Collectors.groupingBy(
+            FieldError::getField,
+            Collectors.mapping(DefaultMessageSourceResolvable::getDefaultMessage, Collectors.toList())
+        ));
+        return new RestResponse<>(400, "Validation failed", errors);
     }
 
     @ExceptionHandler
-    public ApiResponse<HashMap<String, List<String>>> handleDtoValidationException(DtoValidationException e) {
-        var bindingResult = e.getResult();
-        var fieldToErrors = new HashMap<String, List<String>>();
-        bindingResult.getFieldErrors().forEach(fieldError -> {
-            var list = fieldToErrors.computeIfAbsent(fieldError.getField(), _ -> new ArrayList<>());
-            list.add(fieldError.getDefaultMessage());
-        });
-        return new ApiResponse<>(400, "Error while validating fields of passed object", fieldToErrors);
+    public RestResponse<Void> handleAuthenticationException(AuthenticationException e) {
+        return new RestResponse<>(403, e.getMessage());
     }
 
-    @ExceptionHandler(Exception.class)
-    public ApiResponse<?> handleException(HttpServletRequest request, Exception e) {
-        return new ApiResponse<>(
-            500,
-            "Unexpected exception at " + request.getServletPath() + " " + e.getMessage(),
-            null
-        );
+    @ExceptionHandler
+    public RestResponse<Void> handleUnexpectedException(Exception e) {
+        e.printStackTrace();
+        return new RestResponse<>(500, "Internal Server Error: " + e.getMessage());
     }
 
     @MessageExceptionHandler
     @SendToUser("/queue/errors")
-    public StompResponse<Message<?>> handleException(
-        Exception e,
-        Message<?> message,
-        @Header("destination") String destination
-    ) {
-        return new StompResponse<>(
-            500,
-            "Unexpected exception at destination '" + destination + "': " + e.getMessage(),
-            message
-        );
+    public StompResponse<Map<String, List<String>>> handleMessageValidationErrors(MethodArgumentNotValidException e) {
+        Map<String, List<String>> errors = e.getBindingResult().getFieldErrors().stream().collect(Collectors.groupingBy(
+            FieldError::getField,
+            Collectors.mapping(DefaultMessageSourceResolvable::getDefaultMessage, Collectors.toList())
+        ));
+        return new StompResponse<>(400, "Validation failed", errors);
     }
 
+    @MessageExceptionHandler
+    @SendToUser("/queue/errors")
+    public StompResponse<Void> handleMessageAccessDeniedException(AccessDeniedException e) {
+        return new StompResponse<>(403, "Access denier: " + e.getMessage());
+    }
+
+    @MessageExceptionHandler
+    @SendToUser("/queue/errors")
+    public StompResponse<Void> handleMessageUnexpectedException(Exception e) {
+        e.printStackTrace();
+        return new StompResponse<>(500, "Internal server error: " + e.getMessage());
+    }
 }

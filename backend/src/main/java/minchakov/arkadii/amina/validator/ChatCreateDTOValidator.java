@@ -23,7 +23,7 @@ public class ChatCreateDTOValidator implements Validator {
     @Override
     public void validate(Object target, Errors errors) {
         var dto = (ChatCreateDTO) target;
-        for (var username : dto.getUsernames()) {
+        for (var username : dto.usernames()) {
             if (userRepository.findByUsername(username).isEmpty()) {
                 errors.rejectValue("usernames", "", "Username '" + username + "' not found");
             }

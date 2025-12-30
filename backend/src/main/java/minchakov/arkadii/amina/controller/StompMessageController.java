@@ -45,29 +45,29 @@ public class StompMessageController {
     @SendTo("/topic/chat/{id}")
     public OutMessageDTO sendMessage(
         @Valid InMessageDTO inMessageDTO,
-        //        BindingResult errors,
         @DestinationVariable("id") int id, SimpMessageHeaderAccessor headerAccessor
     ) {
-        System.out.println("Обрабатываем сообщение: " + inMessageDTO.getContent());
-        System.out.println("Обрабатываем сообщение: " + id);
-
         Map<String, Object> attrs = headerAccessor.getSessionAttributes();
         if (attrs == null) {
-            throw new RuntimeException("Session attributes was null");
+            throw new RuntimeException("WebSocket session attributes was null while sending message");
         }
-
-        var principal = (User) attrs.get("user");
 
         var chat = chatRepository.findById(id).orElse(null);
         if (chat != null) {
-            if (principal != null) {
-                var user = userRepository.findByUsername(principal.getUsername()).orElse(null);
+            if (attrs.get("user") instanceof User principal) {
+                var user = userRepository.findById(principal.getId()).orElse(null);
                 if (user != null) {
                     if (userChatRepository.existsById(new UserChatId(user, chat))) {
-                        messageRepository.save(new Message(user, chat, inMessageDTO.getContent()));
-                        return new OutMessageDTO(user.getUsername(), inMessageDTO.getContent());
+                        var savedMessage = messageRepository.save(new Message(user, chat, inMessageDTO.content()));
+                        return new OutMessageDTO(
+                            user.getUsername(),
+                            inMessageDTO.content(),
+                            savedMessage.getCreatedAt()
+                        );
                     }
                 }
+            } else {
+                throw new RuntimeException("User not found in WebSocket session attributes while sending message");
             }
         }
 
@@ -78,13 +78,13 @@ public class StompMessageController {
     public Map<String, Object> addChat(Integer chatId, SimpMessageHeaderAccessor headerAccessor) {
         Map<String, Object> attrs = headerAccessor.getSessionAttributes();
         if (attrs == null) {
-            throw new RuntimeException("Session attributes was null");
+            throw new RuntimeException("WebSocket session attributes was null while adding chat");
         }
 
         var principal = (User) attrs.get("user");
         var user = userRepository.findById(principal.getId()).orElse(null);
         if (user == null) {
-            throw new RuntimeException("User not found while adding chat in /app/chat");
+            throw new RuntimeException("User not found in WebSocket session attributes while adding chat");
         }
 
         var chat = chatRepository.findById(chatId).orElse(null);

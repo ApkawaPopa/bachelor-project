@@ -1,43 +1,17 @@
 package minchakov.arkadii.amina.dto;
 
-public class StompResponse<T> {
-
-    private int code;
-
-    private String message;
-
-    private T data;
-
-    public StompResponse() {
+public record StompResponse<T>(
+    int code, String message, T data
+) {
+    public StompResponse(int code, String message) {
+        this(code, message, null);
     }
 
-    public StompResponse(int code, String message, T data) {
-        this.code = code;
-        this.message = message;
-        this.data = data;
+    public static <T> StompResponse<T> success(T data) {
+        return new StompResponse<>(200, "Success", data);
     }
 
-    public int getCode() {
-        return code;
-    }
-
-    public void setCode(int code) {
-        this.code = code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
+    public static <T> StompResponse<T> error(int code, String message) {
+        return new StompResponse<>(code, message, null);
     }
 }

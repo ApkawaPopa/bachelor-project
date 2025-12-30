@@ -28,8 +28,8 @@ public class MessageDTOValidator implements Validator {
         validator.validate(target, errors);
 
         var dto = (MessageDTO) target;
-        if (chatRepository.findById(dto.getChatId()).isEmpty()) {
-            errors.rejectValue("chatId", "", "Chat not found by id: " + dto.getChatId());
+        if (chatRepository.findById(dto.chatId()).isEmpty()) {
+            errors.rejectValue("chatId", "", "Chat not found by id: " + dto.chatId());
         }
     }
 }

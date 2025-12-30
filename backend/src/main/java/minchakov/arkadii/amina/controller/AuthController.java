@@ -1,14 +1,12 @@
 package minchakov.arkadii.amina.controller;
 
 import jakarta.validation.Valid;
-import minchakov.arkadii.amina.dto.ApiResponse;
 import minchakov.arkadii.amina.dto.LoginDTO;
 import minchakov.arkadii.amina.dto.RegisterDTO;
-import minchakov.arkadii.amina.exception.DtoValidationException;
+import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.service.AuthService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -25,24 +23,20 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ApiResponse<String> register(@RequestBody @Valid RegisterDTO registerDTO, BindingResult errors) {
-        if (errors.hasErrors()) {
-            throw new DtoValidationException(errors);
-        }
-
+    public RestResponse<String> register(@RequestBody @Valid RegisterDTO registerDTO) {
         var jwt = authService.register(registerDTO);
-        return new ApiResponse<>(201, "Created", jwt);
+        return RestResponse.success(jwt);
     }
 
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestBody LoginDTO loginDTO) {
+    public RestResponse<String> login(@RequestBody LoginDTO loginDTO) {
         var jwt = authService.login(loginDTO);
-        return new ApiResponse<>(200, "Success", jwt);
+        return RestResponse.success(jwt);
     }
 
     @PostMapping("/ws-token")
-    public ApiResponse<String> getWebSocketToken(@AuthenticationPrincipal User currentUser) {
+    public RestResponse<String> getWebSocketToken(@AuthenticationPrincipal User currentUser) {
         var wsToken = authService.createWebSocketToken(currentUser);
-        return new ApiResponse<>(201, "Created", wsToken);
+        return RestResponse.created(wsToken);
     }
 }

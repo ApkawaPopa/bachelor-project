@@ -14,6 +14,8 @@ import org.springframework.security.web.authentication.logout.LogoutFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.HandlerExceptionResolver;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,20 +23,30 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
+    private final HandlerExceptionResolver handlerExceptionResolver;
+
+    public SecurityConfig(HandlerExceptionResolver handlerExceptionResolver) {
+        this.handlerExceptionResolver = handlerExceptionResolver;
+    }
+
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JWTFilter jWTFilter) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JWTFilter jWTFilter, ObjectMapper objectMapper) {
         return http.authorizeHttpRequests(auth -> auth.requestMatchers(
-                                                          "/api/v1/auth/login",
-                                                          "/api/v1/auth/register", "/ws/**", "/ws",
-                                                          "/error"
-                                                      )
-                                                      .permitAll()
-                                                      .anyRequest()
-                                                      .authenticated())
+                       "/api/v1/auth/login",
+                       "/api/v1/auth/register",
+                       "/ws/**",
+                       "/ws"
+                   ).permitAll().anyRequest().authenticated())
                    .csrf(AbstractHttpConfigurer::disable)
                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                    .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                    .addFilterAfter(jWTFilter, LogoutFilter.class)
+                   .exceptionHandling(e -> e.authenticationEntryPoint((request, response, authException) -> handlerExceptionResolver.resolveException(
+                       request,
+                       response,
+                       null,
+                       authException
+                   )))
                    .build();
     }
 

@@ -1,21 +1,21 @@
 package minchakov.arkadii.amina.controller;
 
 import jakarta.validation.Valid;
-import minchakov.arkadii.amina.dto.ApiResponse;
 import minchakov.arkadii.amina.dto.ChatCreateDTO;
 import minchakov.arkadii.amina.dto.ListChatUsersUserDTO;
 import minchakov.arkadii.amina.dto.ReadChatDTO;
 import minchakov.arkadii.amina.dto.ReadChatMessageDTO;
-import minchakov.arkadii.amina.exception.DtoValidationException;
+import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.validator.ChatCreateDTOValidator;
-import org.modelmapper.ModelMapper;
+import org.springframework.core.MethodParameter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,50 +33,50 @@ public class ChatController {
 
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
-    private final ModelMapper modelMapper;
     private final ChatCreateDTOValidator chatCreateDTOValidator;
 
     public ChatController(
         ChatRepository chatRepository,
         UserRepository userRepository,
-        ModelMapper modelMapper,
         ChatCreateDTOValidator chatCreateDTOValidator
     ) {
         this.chatRepository = chatRepository;
         this.userRepository = userRepository;
-        this.modelMapper = modelMapper;
         this.chatCreateDTOValidator = chatCreateDTOValidator;
     }
 
     @PostMapping
     @Transactional
-    public ApiResponse<Integer> create(
+    public RestResponse<Integer> create(
         @RequestBody @Valid ChatCreateDTO chatCreateDTO, BindingResult errors,
         @AuthenticationPrincipal User currentUser
-    ) {
+    ) throws MethodArgumentNotValidException {
         chatCreateDTOValidator.validate(chatCreateDTO, errors);
-
         if (errors.hasErrors()) {
-            throw new DtoValidationException(errors);
+            try {
+                throw new MethodArgumentNotValidException(
+                    new MethodParameter(
+                        ChatController.class.getDeclaredMethod(
+                            "create",
+                            ChatCreateDTO.class,
+                            BindingResult.class,
+                            User.class
+                    ), 0
+                    ), errors
+                );
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException("Unexpected exception: controller method not found");
+            }
         }
 
-        // TODO: поменять логику заполнения имени чата
-        var usernames = chatCreateDTO.getUsernames();
+        var usernames = chatCreateDTO.usernames();
 
-        Chat chat = new Chat();
+        var chat = new Chat();
         chat.setUsers(new HashSet<>());
-
-        if (usernames.size() == 1) {
-            chat.setName(usernames.stream()
-                                  .findAny()
-                                  .orElseThrow(() -> new RuntimeException(
-                                      "Impossible exception while searching element in one-element array")));
-        } else {
-            chat.setName(chatCreateDTO.getChatName());
-        }
+        chat.setName(chatCreateDTO.chatName());
 
         usernames.add(currentUser.getUsername());
-        for (String username : usernames) {
+        for (var username : usernames) {
             var user = userRepository.findByUsername(username)
                                      .orElseThrow(() -> new RuntimeException("Validator of chat dto didn't work"));
             chat.getUsers().add(user);
@@ -92,11 +92,11 @@ public class ChatController {
             userRepository.save(user);
         }
 
-        return new ApiResponse<>(201, "Чат успешно создан", chat.getId());
+        return RestResponse.created(chat.getId());
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<ReadChatDTO> read(@PathVariable int id, @AuthenticationPrincipal User currentUser) {
+    public RestResponse<ReadChatDTO> read(@PathVariable int id, @AuthenticationPrincipal User currentUser) {
         currentUser = userRepository.findById(currentUser.getId()).orElse(null);
         if (currentUser == null) {
             throw new RuntimeException("Current logged-in user not found in repository");
@@ -116,15 +116,15 @@ public class ChatController {
                                             ))
                                             .toList();
                 var dto = new ReadChatDTO(requestedChat.getName(), messages);
-                return new ApiResponse<>(200, "Success", dto);
+                return new RestResponse<>(200, "Success", dto);
             }
         }
 
-        return new ApiResponse<>(403, "You don't have access to this chat", null);
+        return new RestResponse<>(403, "You don't have access to this chat", null);
     }
 
     @GetMapping("/{id}/users")
-    public ApiResponse<List<ListChatUsersUserDTO>> listChatUsers(
+    public RestResponse<List<ListChatUsersUserDTO>> listChatUsers(
         @PathVariable int id,
         @AuthenticationPrincipal User currentUser
     ) {
@@ -139,12 +139,12 @@ public class ChatController {
             if (currentUser.getChats().contains(requestedChat)) {
                 var users = requestedChat.getUsers()
                                          .stream()
-                                         .map(user -> modelMapper.map(user, ListChatUsersUserDTO.class))
+                                         .map(user -> new ListChatUsersUserDTO(user.getId(), user.getUsername()))
                                          .toList();
-                return new ApiResponse<>(200, "Success", users);
+                return new RestResponse<>(200, "Success", users);
             }
         }
 
-        return new ApiResponse<>(403, "You don't have access to this chat", null);
+        return new RestResponse<>(403, "You don't have access to this chat", null);
     }
 }

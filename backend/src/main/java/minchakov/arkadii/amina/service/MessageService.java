@@ -9,6 +9,7 @@ import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.MessageRepository;
 import minchakov.arkadii.amina.repository.UserChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +46,7 @@ public class MessageService extends CrudServiceImpl<Message, Integer> {
 
         var chat = chatRepository.findById(chatId).orElse(null);
         if (chat == null || !userChatRepository.existsById(new UserChatId(user, chat))) {
-            throw new RuntimeException("User doesn't have access to this chat");
+            throw new AccessDeniedException("User doesn't have access to this chat");
         }
 
         var messages = messageRepository.getMessagesByChat_IdOrderByCreatedAtAsc(chatId);
@@ -62,10 +63,10 @@ public class MessageService extends CrudServiceImpl<Message, Integer> {
 
         var message = messageRepository.findById(id).orElse(null);
         if (message == null || !message.getSender().equals(user)) {
-            throw new RuntimeException("User doesn't have access to this message");
+            throw new AccessDeniedException("User doesn't have access to this message");
         }
 
-        message.setContent(updateMessageDTO.getContent());
+        message.setContent(updateMessageDTO.content());
         message = messageRepository.save(message);
 
         return message.getUpdatedAt();

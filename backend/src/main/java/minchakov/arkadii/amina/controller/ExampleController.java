@@ -1,6 +1,6 @@
 package minchakov.arkadii.amina.controller;
 
-import minchakov.arkadii.amina.dto.ApiResponse;
+import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.Example;
 import minchakov.arkadii.amina.repository.ExampleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,17 +27,17 @@ public class ExampleController {
     }
 
     @GetMapping
-    public ApiResponse<List<Example>> list() {
-        return new ApiResponse<>(200, "Success", repository.findAll());
+    public RestResponse<List<Example>> list() {
+        return new RestResponse<>(200, "Success", repository.findAll());
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<Example> read(@PathVariable Integer id) {
-        return new ApiResponse<>(200, "Success", repository.findById(id).orElse(null));
+    public RestResponse<Example> read(@PathVariable Integer id) {
+        return RestResponse.success(repository.findById(id).orElse(null));
     }
 
     @PostMapping
-    public ApiResponse<Integer> create(@RequestBody Example example) {
-        return new ApiResponse<>(201, "Success", repository.save(example).getId());
+    public RestResponse<Integer> create(@RequestBody Example example) {
+        return RestResponse.created(repository.save(example).getId());
     }
 }

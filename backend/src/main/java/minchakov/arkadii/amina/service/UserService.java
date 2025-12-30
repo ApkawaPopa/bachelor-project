@@ -39,16 +39,24 @@ public class UserService extends CrudServiceImpl<User, Integer> {
 
             String messageContent;
             LocalDateTime messageCreatedAt;
+            LocalDateTime sortingDate;
 
             if (lastMessage.isEmpty()) {
                 messageContent = "";
                 messageCreatedAt = null;
+                sortingDate = chat.getCreatedAt();
             } else {
                 messageContent = lastMessage.get().getContent();
-                messageCreatedAt = lastMessage.get().getCreatedAt();
+                messageCreatedAt = sortingDate = lastMessage.get().getCreatedAt();
             }
 
-            return new ListUserChatsChatDTO(chat.getId(), chat.getName(), messageContent, messageCreatedAt);
-        }).sorted(Comparator.comparing(ListUserChatsChatDTO::getMessageCreatedAt).reversed()).toList();
+            return new ListUserChatsChatDTO(
+                chat.getId(),
+                chat.getName(),
+                messageContent,
+                messageCreatedAt,
+                sortingDate
+            );
+        }).sorted(Comparator.comparing(ListUserChatsChatDTO::sortingDate).reversed()).toList();
     }
 }

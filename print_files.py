@@ -1,10 +1,10 @@
 import os
 
 is_needed = {
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\AminaBackendApplication.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\ApplicationConfig.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\SecurityConfig.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\StompConfig.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\AminaBackendApplication.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\ApplicationConfig.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\SecurityConfig.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\config\\StompConfig.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\AuthController.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\ChatController.java': 1,
     # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\ExampleController.java': 1,
@@ -12,8 +12,6 @@ is_needed = {
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\StompMessageController.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\UserController.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\controller\\advice\\GlobalControllerAdvice.java': 1,
-    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\ApiResponse.java': 1,
-    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\ApiResponseBody.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\ChatCreateDTO.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\GetMessageDTO.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\InMessageDTO.java': 1,
@@ -25,12 +23,12 @@ is_needed = {
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\ReadChatDTO.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\ReadChatMessageDTO.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\RegisterDTO.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\RestResponse.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\RestResponseBody.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\StompResponse.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\dto\\UpdateMessageDTO.java': 1,
-    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\exception\\DtoValidationException.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\filter\\JWTFilter.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\interceptor\\AuthInterceptor.java': 1,
-    # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\interceptor\\WebSocketHandshakeInterceptor.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\filter\\JWTFilter.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\interceptor\\WebSocketHandshakeInterceptor.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\model\\Chat.java': 1,
     # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\model\\Example.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\model\\Message.java': 1,
@@ -53,6 +51,8 @@ is_needed = {
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\util\\JWTUtil.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\validator\\ChatCreateDTOValidator.java': 1,
     'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\validator\\MessageDTOValidator.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\validator\\RegisterDTOUsernameValidator.java': 1,
+    'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\java\\minchakov\\arkadii\\amina\\validator\\UsernameConstraint.java': 1,
     # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\resources\\application.properties': 1,
     # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\resources\\custom.properties': 1,
     # 'C:\\Users\\ark13\\MPU\\Диплом\\amina\\backend\\src\\main\\resources\\db-init.sql': 1,
@@ -72,10 +72,13 @@ def print_files_content(directory):
             file_path = os.path.join(root, file_name)
             try:
                 with open(file_path, 'r', encoding='utf-8') as file:
-                    content = file.read()
-                print(f'{os.path.join(root, file_name)[len(directory) + 1:]}:\n```')
-                print(content)
-                print('```\n')
+                    content = file.readlines()
+                # print(f'{os.path.join(root, file_name)[len(directory) + 15:]}:\n')
+                # print(content)
+                for l in content:
+                    if not (l.isspace() or l.startswith('import ')):
+                        print(l, end='')
+                print()
             except Exception as e:
                 print(f'Error reading {file_path}: {e}')
 

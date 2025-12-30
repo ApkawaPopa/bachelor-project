@@ -1,7 +1,7 @@
 package minchakov.arkadii.amina.controller;
 
-import minchakov.arkadii.amina.dto.ApiResponse;
 import minchakov.arkadii.amina.dto.ListUserChatsChatDTO;
+import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.service.UserService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,8 +22,8 @@ public class UserController {
     }
 
     @GetMapping("/chats")
-    public ApiResponse<List<ListUserChatsChatDTO>> listCurrentUserChats(@AuthenticationPrincipal User currentUser) {
+    public RestResponse<List<ListUserChatsChatDTO>> listCurrentUserChats(@AuthenticationPrincipal User currentUser) {
         var chats = userService.listUserChats(currentUser.getId());
-        return new ApiResponse<>(200, "Success", chats);
+        return new RestResponse<>(200, "Success", chats);
     }
 }

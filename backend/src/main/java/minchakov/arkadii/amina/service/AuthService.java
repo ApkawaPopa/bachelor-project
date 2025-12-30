@@ -9,6 +9,7 @@ import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.repository.WebSocketTokenRepository;
 import minchakov.arkadii.amina.util.JWTUtil;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,25 +41,22 @@ public class AuthService {
     }
 
     public String register(@Valid RegisterDTO registerDTO) {
-        if (userRepository.findByUsername(registerDTO.getUsername()).isPresent()) {
-            throw new RuntimeException("Username is already taken");
-        }
-
-        var hashedPassword = registerDTO.getPasswordHash();
-        var hashedPasswordHash = passwordEncoder.encode(hashedPassword);
-        registerDTO.setPasswordHash(hashedPasswordHash);
-
         var userToRegister = modelMapper.map(registerDTO, User.class);
+
+        var hashedPassword = userToRegister.getPasswordHash();
+        var hashedPasswordHash = passwordEncoder.encode(hashedPassword);
+        userToRegister.setPasswordHash(hashedPasswordHash);
+
         var savedUser = userRepository.save(userToRegister);
 
         return jwtUtil.createJwt(savedUser);
     }
 
     public String login(LoginDTO loginDTO) {
-        var foundUserOpt = userRepository.findByUsername(loginDTO.getUsername());
+        var foundUserOpt = userRepository.findByUsername(loginDTO.username());
 
         if (foundUserOpt.isPresent()) {
-            var hashedOncePassword = loginDTO.getPasswordHash();
+            var hashedOncePassword = loginDTO.passwordHash();
 
             var foundUser = foundUserOpt.get();
 
@@ -67,15 +65,15 @@ public class AuthService {
             }
         }
 
-        throw new RuntimeException("Wrong login or password");
+        throw new BadCredentialsException("Wrong login or password");
     }
 
-    public String createWebSocketToken(User user) {
+    public String createWebSocketToken(User currentUser) {
         var tokenUUID = UUID.randomUUID();
 
         try {
-            webSocketTokenRepository.deleteByUserId((user.getId()));
-            webSocketTokenRepository.save(new WebSocketToken(tokenUUID, user));
+            webSocketTokenRepository.deleteByUserId((currentUser.getId()));
+            webSocketTokenRepository.save(new WebSocketToken(tokenUUID, currentUser));
             return tokenUUID.toString();
         } catch (NullPointerException e) {
             throw new RuntimeException("Error while creating websocket token");
