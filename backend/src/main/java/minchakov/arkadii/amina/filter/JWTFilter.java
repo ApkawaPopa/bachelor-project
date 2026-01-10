@@ -5,76 +5,75 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import minchakov.arkadii.amina.dto.RestResponseBody;
+import minchakov.arkadii.amina.exception.JwtAuthenticationException;
 import minchakov.arkadii.amina.repository.UserRepository;
+import minchakov.arkadii.amina.util.AppAuthenticationToken;
 import minchakov.arkadii.amina.util.JWTUtil;
-import minchakov.arkadii.amina.util.JwtAuthenticationToken;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tools.jackson.databind.ObjectMapper;
+import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
 
 @Component
 public class JWTFilter extends OncePerRequestFilter {
-
     private final JWTUtil jWTUtil;
     private final UserRepository userRepository;
-    private final ObjectMapper objectMapper;
+    private final HandlerExceptionResolver handlerExceptionResolver;
 
-    public JWTFilter(JWTUtil jWTUtil, UserRepository userRepository, ObjectMapper objectMapper) {
+    public JWTFilter(
+        JWTUtil jWTUtil,
+        UserRepository userRepository,
+        HandlerExceptionResolver handlerExceptionResolver
+    ) {
         this.jWTUtil = jWTUtil;
         this.userRepository = userRepository;
-        this.objectMapper = objectMapper;
+        this.handlerExceptionResolver = handlerExceptionResolver;
     }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
     throws ServletException, IOException {
-        System.out.println("Зашли в фильтр JWT: " + request.getRequestURI());
-
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String jwtToken = authHeader.substring(7);
-
             try {
                 var decodedJwtToken = jWTUtil.verifyJwt(jwtToken);
-
                 var username = decodedJwtToken.getSubject();
-
                 if (SecurityContextHolder.getContext().getAuthentication() == null) {
                     var userOpt = userRepository.findByUsername(username);
                     if (userOpt.isEmpty()) {
-                        System.out.println("С валидным токеном нет юзера");
-                        var r = new RestResponseBody<>(500, "User not found with verified JWT Token", null);
-                        response.setStatus(r.code());
-                        response.addHeader("Content-Type", "application/json");
-                        response.getWriter().write(objectMapper.writeValueAsString(r));
+                        handlerExceptionResolver.resolveException(
+                            request,
+                            response,
+                            null,
+                            new BadCredentialsException("User not found with verified JWT Token")
+                        );
+                        SecurityContextHolder.clearContext();
                         return;
                     } else {
                         var user = userOpt.get();
-                        var authenticationToken = new JwtAuthenticationToken(user);
+                        var authenticationToken = new AppAuthenticationToken(user);
                         var newContext = SecurityContextHolder.createEmptyContext();
                         newContext.setAuthentication(authenticationToken);
                         SecurityContextHolder.setContext(newContext);
                     }
                 }
-                System.out.println("Успех");
             } catch (JWTVerificationException e) {
-                System.out.println("Невалидный токен найден");
-                var r = new RestResponseBody<>(401, "Invalid JWT Token", null);
-                response.setStatus(r.code());
-                response.addHeader("Content-Type", "application/json");
-                response.getWriter().write(objectMapper.writeValueAsString(r));
+                handlerExceptionResolver.resolveException(
+                    request,
+                    response,
+                    null,
+                    new JwtAuthenticationException("Invalid JWT Token")
+                );
                 SecurityContextHolder.clearContext();
                 return;
             }
         } else {
             SecurityContextHolder.clearContext();
         }
-
-        System.out.println("Передача остальным фильтрам");
         filterChain.doFilter(request, response);
     }
 }

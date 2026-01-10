@@ -2,6 +2,7 @@ package minchakov.arkadii.amina.service;
 
 import minchakov.arkadii.amina.dto.GetMessageDTO;
 import minchakov.arkadii.amina.dto.UpdateMessageDTO;
+import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.Message;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.model.UserChatId;
@@ -41,7 +42,7 @@ public class MessageService extends CrudServiceImpl<Message, Integer> {
     public List<GetMessageDTO> listMessages(int chatId, User user) {
         user = userRepository.findById(user.getId()).orElse(null);
         if (user == null) {
-            throw new RuntimeException("Cannot find user to list messages");
+            throw new InternalServerErrorException("Authenticated user not found in repository");
         }
 
         var chat = chatRepository.findById(chatId).orElse(null);
@@ -55,10 +56,10 @@ public class MessageService extends CrudServiceImpl<Message, Integer> {
                        .toList();
     }
 
-    public LocalDateTime updateMessage(UpdateMessageDTO updateMessageDTO, int chatId, int id, User user) {
+    public LocalDateTime updateMessage(UpdateMessageDTO updateMessageDTO, int id, User user) {
         user = userRepository.findById(user.getId()).orElse(null);
         if (user == null) {
-            throw new RuntimeException("Cannot find user to update message");
+            throw new InternalServerErrorException("Authenticated user not found in repository");
         }
 
         var message = messageRepository.findById(id).orElse(null);

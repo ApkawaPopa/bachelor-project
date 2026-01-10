@@ -3,7 +3,7 @@ POST http://{{host}}:{{port}}/api/v1/auth/register
 Content-Type: application/json
 
 {
-  "username": "username",
+  "username": "username10",
   "passwordHash": "passsssssssssssssssssssssssssssssssssssssssssssssssssssswordHash",
   "publicKey": "publicKeypublicKeypublicKeypublicKeypublicKeypublicKeypublicKeypublicKey",
   "encryptedPrivateKey": "privateKeyprivateKeyprivateKeyprivateKeyprivateKeyprivateKeyprivateKey"
@@ -108,18 +108,28 @@ Authorization: Bearer {{jwt}}
 
 {
   "chatName": "Hello chat",
-  "usernames": [
-    "username",
-    "test_user",
-    "test_user1"
+  "usersDetails": [
+    {
+      "username": "Apkawa",
+      "encryptedSymmetricKey": "some_key1"
+    },
+    {
+      "username": "test_user2",
+      "encryptedSymmetricKey": "some_key2"
+    },
+    {
+      "username": "test_user3",
+      "encryptedSymmetricKey": "some_key3"
+    }
   ]
 }
 
 ###
 #{
 #  "code": 201,
-#  "message": "Чат успешно создан",
-#  "data": 26 // id созданного чата
+#  "message": "Created",
+#  "data": 50,
+#  "timestamp": "2026-01-07T08:38:35.275153945"
 #}
 
 
@@ -168,7 +178,7 @@ Authorization: Bearer {{jwt}}
 #  ]
 #}
 
-### Получить список чатов пользователя с последними сообщениями в порядке даты последнего сообщения
+### Получить список чатов пользователя с последними сообщениями и симметричными ключами в порядке даты последнего сообщения
 GET http://{{host}}:{{port}}/api/v1/user/chats
 Authorization: Bearer {{jwt}}
 
@@ -178,18 +188,47 @@ Authorization: Bearer {{jwt}}
 #  "message": "Success",
 #  "data": [
 #    {
-#      "id": 25,
-#      "name": "Brothers",
-#      "messageContent": "Да да привет",
-#      "messageCreatedAt": "2025-12-29T14:38:11.811434" // самое позднее
+#      "id": 48,
+#      "name": "Family",
+#      "encryptedPrivateKey": "",
+#      "messageContent": "Hello",
+#      "messageCreatedAt": "2026-01-06T15:45:38.394782",
+#      "sortingDate": "2026-01-06T15:45:38.394782"
 #    },
 #    {
 #      "id": 27,
 #      "name": "Brothers3",
-#      "messageContent": "adsad hello",
-#      "messageCreatedAt": "2025-12-29T14:36:49.828212" // самое раннее
+#      "encryptedPrivateKey": "",
+#      "messageContent": "2",
+#      "messageCreatedAt": "2026-01-06T14:01:40.000565",
+#      "sortingDate": "2026-01-06T14:01:40.000565"
+#    },
+#    {
+#      "id": 25,
+#      "name": "Brothers",
+#      "encryptedPrivateKey": "",
+#      "messageContent": "4",
+#      "messageCreatedAt": "2026-01-06T13:57:00.533211",
+#      "sortingDate": "2026-01-06T13:57:00.533211"
+#    },
+#    {
+#      "id": 47,
+#      "name": "Hello chat",
+#      "encryptedPrivateKey": "",
+#      "messageContent": "asdf",
+#      "messageCreatedAt": "2025-12-30T18:19:53.756401",
+#      "sortingDate": "2025-12-30T18:19:53.756401"
+#    },
+#    {
+#      "id": 29,
+#      "name": "ApkawaLol",
+#      "encryptedPrivateKey": "",
+#      "messageContent": "asdf",
+#      "messageCreatedAt": "2025-12-30T18:19:49.987245",
+#      "sortingDate": "2025-12-30T18:19:49.987245"
 #    }
-#  ]
+#  ],
+#  "timestamp": "2026-01-07T07:43:11.585945086"
 #}
 
 ### Получить список всех сообщений чата в порядке даты сообщения
@@ -239,4 +278,56 @@ Authorization: Bearer {{jwt}}
 #  "code": 200,
 #  "message": "Success",
 #  "data": "2025-12-29T14:38:11.811444"
+#}
+
+### Получить публичные ключи пользователей по username
+GET http://{{host}}:{{port}}/api/v1/user/keys
+Content-Type: application/json
+Authorization: Bearer {{jwt}}
+
+{
+  "usernames": [
+    {
+      "username": "test_user1"
+    },
+    {
+      "username": "test_user2"
+    },
+    {
+      "username": "test_user3"
+    }
+  ]
+}
+
+###
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": [
+#    {
+#      "username": "test_user1",
+#      "publicKey": "test_public_key"
+#    },
+#    {
+#      "username": "test_user2",
+#      "publicKey": "test_public_key"
+#    },
+#    {
+#      "username": "test_user3",
+#      "publicKey": "test_public_key"
+#    }
+#  ],
+#  "timestamp": "2026-01-06T14:39:00.114769668"
+#}
+
+
+### Получить свой зашифрованный симметричный ключ по {{id}} чата
+GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/key
+Authorization: Bearer {{jwt}}
+
+#{
+#  "code": 200,
+#  "message": "Success",
+#  "data": "", // зашифрованный симметричный ключ
+#  "timestamp": "2026-01-07T08:35:39.087152699"
 #}

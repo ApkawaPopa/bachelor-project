@@ -1,6 +1,9 @@
 package minchakov.arkadii.amina.service;
 
+import minchakov.arkadii.amina.dto.GetUsersKeysOutDTO;
+import minchakov.arkadii.amina.dto.GetUsersKeysUsernameDTO;
 import minchakov.arkadii.amina.dto.ListUserChatsChatDTO;
+import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.repository.MessageRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
@@ -32,9 +35,11 @@ public class UserService extends CrudServiceImpl<User, Integer> {
             throw new RuntimeException("User not found by id: " + id);
         }
 
-        var chats = user.getChats();
+        var userChats = user.getUserChats();
 
-        return chats.stream().map(chat -> {
+        return userChats.stream().map(userChat -> {
+            var chat = userChat.getChat();
+
             var lastMessage = messageRepository.findFirstByChatOrderByCreatedAtDesc(chat);
 
             String messageContent;
@@ -44,19 +49,26 @@ public class UserService extends CrudServiceImpl<User, Integer> {
             if (lastMessage.isEmpty()) {
                 messageContent = "";
                 messageCreatedAt = null;
-                sortingDate = chat.getCreatedAt();
+                sortingDate = userChat.getCreatedAt();
             } else {
                 messageContent = lastMessage.get().getContent();
                 messageCreatedAt = sortingDate = lastMessage.get().getCreatedAt();
             }
 
             return new ListUserChatsChatDTO(
-                chat.getId(),
-                chat.getName(),
+                chat.getId(), chat.getName(), userChat.getEncryptedSymmetricKey(),
                 messageContent,
                 messageCreatedAt,
                 sortingDate
             );
         }).sorted(Comparator.comparing(ListUserChatsChatDTO::sortingDate).reversed()).toList();
+    }
+
+    public List<GetUsersKeysOutDTO> getUsersKeys(List<GetUsersKeysUsernameDTO> usernameDtos) {
+        return usernameDtos.stream().map(dto -> {
+            var user = userRepository.findByUsername(dto.username())
+                                     .orElseThrow(() -> new InternalServerErrorException("Validator didn't work"));
+            return new GetUsersKeysOutDTO(user.getUsername(), user.getPublicKey());
+        }).toList();
     }
 }

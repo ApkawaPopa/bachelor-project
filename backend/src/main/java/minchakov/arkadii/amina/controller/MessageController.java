@@ -39,7 +39,7 @@ public class MessageController {
         @PathVariable int id,
         @AuthenticationPrincipal User user
     ) {
-        var updatedAt = messageService.updateMessage(updateMessageDTO, chatId, id, user);
+        var updatedAt = messageService.updateMessage(updateMessageDTO, id, user);
         return RestResponse.success(updatedAt);
     }
 }

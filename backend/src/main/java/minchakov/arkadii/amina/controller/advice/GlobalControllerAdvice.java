@@ -2,16 +2,18 @@ package minchakov.arkadii.amina.controller.advice;
 
 import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.dto.StompResponse;
+import minchakov.arkadii.amina.exception.AppException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.messaging.handler.annotation.MessageExceptionHandler;
 import org.springframework.messaging.simp.annotation.SendToUser;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-import java.nio.file.AccessDeniedException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -29,8 +31,23 @@ public class GlobalControllerAdvice {
     }
 
     @ExceptionHandler
+    public RestResponse<Void> handleAppException(AppException e) {
+        return new RestResponse<>(e.getStatus().value(), e.getMessage());
+    }
+
+    @ExceptionHandler
     public RestResponse<Void> handleAuthenticationException(AuthenticationException e) {
+        return new RestResponse<>(401, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public RestResponse<Void> handleAccessDenied(AccessDeniedException e) {
         return new RestResponse<>(403, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public RestResponse<Void> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+        return new RestResponse<>(400, "Malformed request: " + e.getMessage());
     }
 
     @ExceptionHandler
@@ -40,7 +57,7 @@ public class GlobalControllerAdvice {
     }
 
     @MessageExceptionHandler
-    @SendToUser("/queue/errors")
+    @SendToUser("/queue/error")
     public StompResponse<Map<String, List<String>>> handleMessageValidationErrors(MethodArgumentNotValidException e) {
         Map<String, List<String>> errors = e.getBindingResult().getFieldErrors().stream().collect(Collectors.groupingBy(
             FieldError::getField,
@@ -50,13 +67,19 @@ public class GlobalControllerAdvice {
     }
 
     @MessageExceptionHandler
-    @SendToUser("/queue/errors")
-    public StompResponse<Void> handleMessageAccessDeniedException(AccessDeniedException e) {
-        return new StompResponse<>(403, "Access denier: " + e.getMessage());
+    @SendToUser("/queue/error")
+    public StompResponse<Void> handleMessageAppException(AppException e) {
+        return new StompResponse<>(e.getStatus().value(), e.getMessage());
     }
 
     @MessageExceptionHandler
-    @SendToUser("/queue/errors")
+    @SendToUser("/queue/error")
+    public StompResponse<Void> handleMessageAccessDeniedException(AccessDeniedException e) {
+        return new StompResponse<>(403, "Access denied: " + e.getMessage());
+    }
+
+    @MessageExceptionHandler
+    @SendToUser("/queue/error")
     public StompResponse<Void> handleMessageUnexpectedException(Exception e) {
         e.printStackTrace();
         return new StompResponse<>(500, "Internal server error: " + e.getMessage());

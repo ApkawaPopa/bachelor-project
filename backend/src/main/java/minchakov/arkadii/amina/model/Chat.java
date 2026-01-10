@@ -5,9 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -36,13 +33,8 @@ public class Chat {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @ManyToMany
-    @JoinTable(
-        name = "user_chat",
-        joinColumns = @JoinColumn(name = "chat_id"),
-        inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private Set<User> users;
+    @OneToMany(mappedBy = "chat")
+    private Set<UserChat> chatUsers;
 
     @OneToMany(mappedBy = "chat")
     private List<Message> messages;
@@ -97,12 +89,12 @@ public class Chat {
         this.updatedAt = updatedAt;
     }
 
-    public Set<User> getUsers() {
-        return users;
+    public Set<UserChat> getChatUsers() {
+        return chatUsers;
     }
 
-    public void setUsers(Set<User> users) {
-        this.users = users;
+    public void setChatUsers(Set<UserChat> chatUsers) {
+        this.chatUsers = chatUsers;
     }
 
     public List<Message> getMessages() {

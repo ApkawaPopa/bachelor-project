@@ -15,7 +15,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-import tools.jackson.databind.ObjectMapper;
 
 import java.util.Arrays;
 import java.util.List;
@@ -30,7 +29,7 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, JWTFilter jWTFilter, ObjectMapper objectMapper) {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JWTFilter jWTFilter) {
         return http.authorizeHttpRequests(auth -> auth.requestMatchers(
                        "/api/v1/auth/login",
                        "/api/v1/auth/register",

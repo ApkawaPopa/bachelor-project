@@ -5,7 +5,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
@@ -43,8 +42,8 @@ public class User {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @ManyToMany(mappedBy = "users")
-    private Set<Chat> chats;
+    @OneToMany(mappedBy = "user")
+    private Set<UserChat> userChats;
 
     @OneToMany(mappedBy = "sender")
     private List<Message> messages;
@@ -126,12 +125,12 @@ public class User {
         this.updatedAt = updatedAt;
     }
 
-    public Set<Chat> getChats() {
-        return chats;
+    public Set<UserChat> getUserChats() {
+        return userChats;
     }
 
-    public void setChats(Set<Chat> chats) {
-        this.chats = chats;
+    public void setUserChats(Set<UserChat> userChats) {
+        this.userChats = userChats;
     }
 
     public List<Message> getMessages() {

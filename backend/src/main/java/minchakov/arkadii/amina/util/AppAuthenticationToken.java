@@ -6,11 +6,11 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 
 import java.util.List;
 
-public class JwtAuthenticationToken extends AbstractAuthenticationToken {
+public class AppAuthenticationToken extends AbstractAuthenticationToken {
 
     private final User user;
 
-    public JwtAuthenticationToken(User user) {
+    public AppAuthenticationToken(User user) {
         super(List.of());
         super.setAuthenticated(true);
         this.user = user;
@@ -23,6 +23,16 @@ public class JwtAuthenticationToken extends AbstractAuthenticationToken {
 
     @Override
     public @Nullable User getPrincipal() {
+        return user;
+    }
+
+    @Override
+    public String getName() {
+        return user.getUsername();
+    }
+
+    @Override
+    public @Nullable User getDetails() {
         return user;
     }
 }

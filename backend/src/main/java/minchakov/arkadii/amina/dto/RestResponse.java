@@ -3,14 +3,15 @@ package minchakov.arkadii.amina.dto;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
-public class RestResponse<T> extends ResponseEntity<RestResponseBody<T>> {
+import java.time.LocalDateTime;
 
+public class RestResponse<T> extends ResponseEntity<RestResponseBody<T>> {
     public RestResponse(int code, String message, T data) {
-        super(new RestResponseBody<>(code, message, data), HttpStatusCode.valueOf(code));
+        super(new RestResponseBody<>(code, message, data, LocalDateTime.now()), HttpStatusCode.valueOf(code));
     }
 
     public RestResponse(int code, String message) {
-        super(new RestResponseBody<>(code, message, null), HttpStatusCode.valueOf(code));
+        super(new RestResponseBody<>(code, message, null, LocalDateTime.now()), HttpStatusCode.valueOf(code));
     }
 
     public static <T> RestResponse<T> success(T data) {

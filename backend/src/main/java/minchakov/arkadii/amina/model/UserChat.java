@@ -27,15 +27,19 @@ public class UserChat {
     @JoinColumn(name = "chat_id", nullable = false)
     private Chat chat;
 
+    @Column(name = "encrypted_symmetric_key")
+    private String encryptedSymmetricKey;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     public UserChat() {
     }
 
-    public UserChat(User user, Chat chat) {
+    public UserChat(User user, Chat chat, String encryptedSymmetricKey) {
         this.user = user;
         this.chat = chat;
+        this.encryptedSymmetricKey = encryptedSymmetricKey;
     }
 
     @PrePersist
@@ -57,6 +61,14 @@ public class UserChat {
 
     public void setChat(Chat chat) {
         this.chat = chat;
+    }
+
+    public String getEncryptedSymmetricKey() {
+        return encryptedSymmetricKey;
+    }
+
+    public void setEncryptedSymmetricKey(String encryptedSymmetricKey) {
+        this.encryptedSymmetricKey = encryptedSymmetricKey;
     }
 
     public LocalDateTime getCreatedAt() {
