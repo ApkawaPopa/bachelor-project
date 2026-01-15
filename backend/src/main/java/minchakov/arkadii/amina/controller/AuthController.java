@@ -2,6 +2,7 @@ package minchakov.arkadii.amina.controller;
 
 import jakarta.validation.Valid;
 import minchakov.arkadii.amina.dto.LoginDTO;
+import minchakov.arkadii.amina.dto.OutAuthDTO;
 import minchakov.arkadii.amina.dto.RegisterDTO;
 import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.User;
@@ -23,15 +24,15 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public RestResponse<String> register(@RequestBody @Valid RegisterDTO registerDTO) {
-        var jwt = authService.register(registerDTO);
-        return RestResponse.success(jwt);
+    public RestResponse<OutAuthDTO> register(@RequestBody @Valid RegisterDTO registerDTO) {
+        var response = authService.register(registerDTO);
+        return RestResponse.success(response);
     }
 
     @PostMapping("/login")
-    public RestResponse<String> login(@RequestBody LoginDTO loginDTO) {
-        var jwt = authService.login(loginDTO);
-        return RestResponse.success(jwt);
+    public RestResponse<OutAuthDTO> login(@RequestBody LoginDTO loginDTO) {
+        var response = authService.login(loginDTO);
+        return RestResponse.success(response);
     }
 
     @PostMapping("/ws-token")

@@ -1,15 +1,14 @@
 <script setup>
 import {onMounted, onUnmounted, ref} from 'vue'
 import SockJS from 'sockjs-client'
-import {SHA256} from 'crypto-js';
-import * as StompJs from '@stomp/stompjs';
+import {SHA256} from 'crypto-js'
+import * as StompJs from '@stomp/stompjs'
 
 //SockJS
 const socket = ref(null);
 const connectionStatus = ref('disconnected');
 
 //chat
-let id = 0
 const haventJWT = ref(true)
 const name = ref('')
 const jwtToken = ref('')
@@ -18,21 +17,6 @@ const apiData = ref(null)
 let address = "192.168.1.44:56234"
 
 const chats = ref([])
-
-async function postData(Paddress, data) {
-  const response = await fetch(
-      Paddress,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          "Authorization": "Bearer " + jwtToken.value
-        },
-        body: JSON.stringify(data)
-      }
-  )
-  return await response.json()
-}
 
 async function regLog(Paddress, data) {
   const response = await fetch(
@@ -54,6 +38,24 @@ async function getData(Paddress, data) {
   return apiData.value
 }
 
+function arrayBufferToBase64(buffer) {
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  for (let i = 0; i < bytes.byteLength; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(base64) {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
 onMounted(async () => {
   jwtToken.value = localStorage.getItem("jwtToken")
   if (jwtToken.value) {
@@ -63,17 +65,88 @@ onMounted(async () => {
   }
 })
 
+let privateKey = null
+
 async function goIn() {
-  await getData("http://" + address + "/api/v1/user/chats", {
+  let privat = new Uint8Array(base64ToArrayBuffer(localStorage.getItem("private")))
+  //console.log(privat.slice(0, 1)) - version
+  let salt = privat.slice(1, 17)
+  let iv = privat.slice(17, 29)
+  let encryptPrivateKey = privat.slice(29, privat.length)
+
+  const keyMaterial = await window.crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(localStorage.getItem("password")),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+  )
+
+  let aesKey = await window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyMaterial,
+      {name: "AES-GCM", length: 256},
+      true,
+      ["decrypt"]
+  )
+
+  const decryptedPrivateKey = await window.crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      aesKey,
+      encryptPrivateKey
+  )
+
+  privateKey = await window.crypto.subtle.importKey(
+      "pkcs8",
+      decryptedPrivateKey,
+      {
+        name: "RSA-OAEP",
+        hash: "SHA-256"
+      },
+      true,
+      ["decrypt"]
+  )
+
+  await getData("https://" + address + "/api/v1/user/chats", {
     method: "GET",
     headers: {"Authorization": "Bearer " + jwtToken.value}
-  }).then((data) => {
-    data.data.forEach((item) => {
-      chats.value.push({id: item.id, name: item.name, lastMessage: item.messageContent})
-    })
+  }).then(async (data) => {
+    for (const item of data.data) {
+      let symKey = await window.crypto.subtle.decrypt(
+          {name: "RSA-OAEP"},
+          privateKey,
+          base64ToArrayBuffer(item.encryptedSymmetricKey)
+      )
+      let symmetricKey = await window.crypto.subtle.importKey(
+          "raw",
+          symKey,
+          {name: "AES-GCM", length: 256},
+          true,
+          ["encrypt", "decrypt"]
+      )
+      let decryptedMessage = ""
+      if (item.messageContent != "") {
+        let decodedBlob = base64ToArrayBuffer(item.messageContent)
+        let iv = decodedBlob.slice(1, 13)
+        let content = decodedBlob.slice(13)
+        decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
+          "name": "AES-GCM",
+          "iv": iv
+        }, symmetricKey, content))
+      }
+      chats.value.push({id: item.id, name: item.name, lastMessage: decryptedMessage, symmetricKey: symmetricKey})
+    }
   })
 
-  await getData("http://" + address + "/api/v1/auth/ws-token", {
+  await getData("https://" + address + "/api/v1/auth/ws-token", {
     method: "POST",
     headers: {"Authorization": "Bearer " + jwtToken.value}
   }).then((data) => {
@@ -86,9 +159,9 @@ onUnmounted(() => {
 })
 
 const connect = (token) => {
-  //socket.value = new SockJS("http://" + address + "/ws/chat?token=" + token)
+  //socket.value = new SockJS("https://" + address + "/ws/chat?token=" + token)
   socket.value = new StompJs.Client({
-    webSocketFactory: () => new SockJS("http://" + address + "/ws?token=" + token),
+    webSocketFactory: () => new SockJS("https://" + address + "/ws?token=" + token),
     connectHeaders: {
       "Authorization": "Bearer " + jwtToken.value
     }
@@ -97,25 +170,78 @@ const connect = (token) => {
   socket.value.onConnect = () => {
     connectionStatus.value = "connected"
     console.log("Successfully connected")
-    socket.value.subscribe("/queue/errors", message => console.log("ERROR:", message.body),
-        {"Authorization": "Bearer " + jwtToken.value})
-    chats.value.forEach((item) => {
-      socket.value.subscribe("/topic/chat/" + item.id, (message) => {
-            let chatId = -1
-            for (var id = 0; id < chatMessages.value.length; id++) {
-              if (chatMessages.value[id].id == item.id) {
-                chatId = id
-                break
-              }
+    socket.value.subscribe("/user/queue/error", message => console.log("ERROR:", message.body))
+    socket.value.subscribe("/user/queue/chat", async (message) => {
+      console.log("createdChat", JSON.parse(message.body))
+      let symKey = await window.crypto.subtle.decrypt(
+          {name: "RSA-OAEP"},
+          privateKey,
+          base64ToArrayBuffer(JSON.parse(message.body).data.encryptedSymmetricKey)
+      )
+      let symmetricKey = await window.crypto.subtle.importKey(
+          "raw",
+          symKey,
+          {name: "AES-GCM", length: 256},
+          true,
+          ["encrypt", "decrypt"]
+      )
+      let chatId = JSON.parse(message.body).data.id
+      let pisk = chats.value.push({
+        id: chatId,
+        name: JSON.parse(message.body).data.name,
+        lastMessage: "",
+        symmetricKey: symmetricKey
+      })
+      chatMessages.value.push({id: chatId, message: new Proxy(Array(), Array())})
+      let topChat = chats.value.splice(pisk - 1, 1)
+      chats.value = topChat.concat(chats.value)
+
+      socket.value.subscribe("/topic/chat/" + chatId, async (message2) => {
+            let chatIdx = chats.value.findIndex(c => c.id == chatId)
+            let decodedBlob = base64ToArrayBuffer(JSON.parse(message2.body).data.content)
+            let iv = decodedBlob.slice(1, 13)
+            let content = decodedBlob.slice(13)
+            let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
+              "name": "AES-GCM",
+              "iv": iv
+            }, chats.value[chatIdx].symmetricKey, content))
+            chats.value[chatIdx].lastMessage = decryptedMessage
+            let currentChatMessages = chatMessages.value.find(x => x.id == chatId)
+            if (currentChatMessages) {
+              currentChatMessages.message.push({
+                sender: JSON.parse(message2.body).data.sender,
+                content: decryptedMessage,
+                createdAt: JSON.parse(message2.body).data.createdAt
+              })
             }
-            if (chatId != -1) {
-              chatMessages.value[id].message.push(JSON.parse(message.body))
-              console.log(chatMessages.value)
-            }
+            let topChat = chats.value.splice(chatIdx, 1)
+            chats.value = topChat.concat(chats.value)
           },
           {"Authorization": "Bearer " + jwtToken.value})
+    })
+    chats.value.forEach((item) => {
+      socket.value.subscribe("/topic/chat/" + item.id, async (message) => {
+        let chatIdx = chats.value.findIndex(c => c.id == item.id)
+        let decodedBlob = base64ToArrayBuffer(JSON.parse(message.body).data.content)
+        let iv = decodedBlob.slice(1, 13)
+        let content = decodedBlob.slice(13)
+        let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
+          "name": "AES-GCM",
+          "iv": iv
+        }, chats.value[chatIdx].symmetricKey, content))
+        chats.value[chatIdx].lastMessage = decryptedMessage
+        let currentChatMessages = chatMessages.value.find(x => x.id == item.id)
+        if (currentChatMessages) {
+          currentChatMessages.message.push({
+            sender: JSON.parse(message.body).data.sender,
+            content: decryptedMessage,
+            createdAt: JSON.parse(message.body).data.createdAt
+          })
+        }
+        let topChat = chats.value.splice(chatIdx, 1)
+        chats.value = topChat.concat(chats.value)
+      })
       console.log("Subscribe to:" + item.id)
-      //socket.value.publish({destination: "/topic/chat/" + item.id + "/message/post", body:"test"})
     })
   }
 
@@ -132,6 +258,35 @@ const connect = (token) => {
 
     //setTimeout(() => connect(), 5000);
   }
+}
+
+async function generateKeyPair() {
+  const keyPair = await window.crypto.subtle.generateKey(
+      {
+        name: "RSA-OAEP",
+        modulusLength: 2048,
+        publicExponent: new Uint8Array([1, 0, 1]),
+        hash: "SHA-256",
+      },
+      true,
+      ["encrypt", "decrypt"]
+  )
+  return {
+    publicKey: keyPair.publicKey,
+    privateKey: keyPair.privateKey
+  }
+}
+
+async function generateSymmetricKey() {
+  const key = await window.crypto.subtle.generateKey(
+      {
+        name: "AES-GCM",
+        length: 256
+      },
+      true,
+      ["encrypt", "decrypt"]
+  )
+  return key
 }
 
 const passNot = ref(false)
@@ -157,25 +312,82 @@ function errCheck() {
   else haveError.value = "noError"
 }
 
-function reg() {
+async function reg() {
   console.log("Регистрация пользователя:" + userLogin.value + " с паролем:" + userPassword.value + "/" + userPasswordConfirmed.value)
   passCheck()
   if (passNot.value) return
   console.log("Отправка запроса на сервер")
-  regLog("http://" + address + "/api/v1/auth/register",
+  let keyPair = await generateKeyPair()
+  let exPublic = await window.crypto.subtle.exportKey("jwk", keyPair.publicKey)
+
+  let exPrivate = await window.crypto.subtle.exportKey(
+      "pkcs8",
+      keyPair.privateKey
+  )
+
+  let salt = window.crypto.getRandomValues(new Uint8Array(16))
+  let iv = window.crypto.getRandomValues(new Uint8Array(12))
+
+  let keyForPrivate = await window.crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(userPassword.value),
+      {name: "PBKDF2"},
+      false,
+      ["deriveKey"]
+  );
+
+  let aesKey = await window.crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt: salt,
+        iterations: 100000,
+        hash: "SHA-256"
+      },
+      keyForPrivate,
+      {name: "AES-GCM", length: 256},
+      true,
+      ["encrypt", "decrypt"]
+  )
+  let encryptPrivate = await window.crypto.subtle.encrypt(
+      {
+        name: "AES-GCM",
+        iv: iv
+      },
+      aesKey,
+      exPrivate
+  )
+
+  let version = new Uint8Array([0x01])
+
+  let totalLength = version.length + salt.length + iv.length + encryptPrivate.byteLength
+  let result = new Uint8Array(totalLength)
+
+  let offset = 0;
+  result.set(version, offset)
+  offset += version.length
+  result.set(salt, offset)
+  offset += salt.length
+  result.set(iv, offset)
+  offset += iv.length
+  result.set(new Uint8Array(encryptPrivate), offset)
+  let kok = arrayBufferToBase64(result)
+  regLog("https://" + address + "/api/v1/auth/register",
       {
         "username": userLogin.value,
         "passwordHash": SHA256(userPassword.value).toString(),
-        "publicKey": "0123456789012345678901234567890123456789012345678901234567890123",
-        "encryptedPrivateKey": "0123456789012345678901234567890123456789012345678901234567890123"
+        "publicKey": JSON.stringify(exPublic),
+        "encryptedPrivateKey": kok
       }).then((regData) => {
     console.log("resp:", regData, regData.code == 200)
     if (regData.code === 200 || regData.code === 201) {
       haventJWT.value = false
       name.value = userLogin.value
-      jwtToken.value = regData.data
-      localStorage.setItem("jwtToken", regData.data)
+      jwtToken.value = regData.data.jwt
+      localStorage.setItem("public", regData.data.publicKey)
+      localStorage.setItem("private", regData.data.encryptedPrivateKey)
+      localStorage.setItem("jwtToken", regData.data.jwt)
       localStorage.setItem("username", userLogin.value)
+      localStorage.setItem("password", userPassword.value)
       goIn()
     } else {
       console.log("Ошибка запроса:", regData)
@@ -186,7 +398,7 @@ function reg() {
 function login() {
   console.log("Вход в пользователя:" + userLogin.value + " с паролем:" + userPassword.value)
   console.log("Хеш:", SHA256(userPassword.value).toString())
-  regLog("http://" + address + "/api/v1/auth/login",
+  regLog("https://" + address + "/api/v1/auth/login",
       {
         "username": userLogin.value,
         "passwordHash": SHA256(userPassword.value).toString()
@@ -195,9 +407,12 @@ function login() {
     if (regData.code === 200 || regData.code === 201) {
       haventJWT.value = false
       name.value = userLogin.value
-      jwtToken.value = regData.data
-      localStorage.setItem("jwtToken", regData.data)
+      jwtToken.value = regData.data.jwt
+      localStorage.setItem("public", regData.data.publicKey)
+      localStorage.setItem("private", regData.data.encryptedPrivateKey)
+      localStorage.setItem("jwtToken", regData.data.jwt)
       localStorage.setItem("username", userLogin.value)
+      localStorage.setItem("password", userPassword.value)
       goIn()
       passCh.value = false
       errCheck()
@@ -214,22 +429,30 @@ function login() {
 const activeChatId = ref(-1)
 const isChatMenu = ref(false)
 const chatMessages = ref([])
+const chatHeaderName = ref("")
 
-async function selectChat(a) {
+async function selectChat(a, name) {
   activeChatId.value = a
-  let estChat = false
-  for (var i = 0; i < chatMessages.value.length; i++) {
-    if (chatMessages.value[i].id == activeChatId.value) {
-      estChat = true
-      break
-    }
-  }
-  if (!estChat) {
-    await getData("http://" + address + "/api/v1/chat/" + activeChatId.value + "/message", {
+  chatHeaderName.value = name
+  let chatIsPresent = chatMessages.value.some(x => x.id == activeChatId.value)
+  if (!chatIsPresent) {
+    await getData("https://" + address + "/api/v1/chat/" + activeChatId.value + "/message", {
       method: "GET",
       headers: {"Authorization": "Bearer " + jwtToken.value}
-    }).then((data) => {
-      chatMessages.value.push({id: activeChatId.value, message: data.data})
+    }).then(async (data) => {
+      let messages = new Proxy(Array(), Array())
+      let chatIdx = chats.value.findIndex(c => c.id == activeChatId.value)
+      for (const item of data.data) {
+        let decodedBlob = base64ToArrayBuffer(item.content)
+        let iv = decodedBlob.slice(1, 13)
+        let content = decodedBlob.slice(13)
+        let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
+          "name": "AES-GCM",
+          "iv": iv
+        }, chats.value[chatIdx].symmetricKey, content))
+        messages.push({sender: item.sender, content: decryptedMessage, createdAt: item.createdAt})
+      }
+      chatMessages.value.push({id: activeChatId.value, message: messages})
     })
   }
   console.log(chatMessages.value)
@@ -251,7 +474,34 @@ const chatName = ref('')
 const username = ref('')
 
 async function addChatF() {
-  await getData("http://" + address + "/api/v1/chat", {
+  if (name.value == username.value) return;
+
+  let symmetricKey = await window.crypto.subtle.exportKey("raw", await generateSymmetricKey())
+  let users = []
+
+  await getData("https://" + address + "/api/v1/user/keys", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + jwtToken.value,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "usernames": [{"username": name.value}, {"username": username.value}]
+    })
+  }).then(async (data) => {
+    for (const item of data.data) {
+      let key = await window.crypto.subtle.importKey(
+          "jwk",
+          JSON.parse(item.publicKey),
+          {name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256"},
+          true,
+          ["encrypt"])
+
+      let enSyKey = arrayBufferToBase64(await window.crypto.subtle.encrypt({name: "RSA-OAEP"}, key, symmetricKey))
+      users.push({"username": item.username, "encryptedSymmetricKey": enSyKey})
+    }
+  })
+  await getData("https://" + address + "/api/v1/chat", {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + jwtToken.value,
@@ -259,45 +509,117 @@ async function addChatF() {
     },
     body: JSON.stringify({
       "chatName": chatName.value,
-      "usernames": [
-        name.value,
-        username.value
-      ]
+      "usersDetails": users
+    })
+  }).then((data) => {
+    console.log("Single Chat Creation:", data.data)
+  })
+}
+
+async function addGroupChatF() {
+  let symmetricKey = await window.crypto.subtle.exportKey("raw", await generateSymmetricKey())
+  let users = []
+  let userN = [{"username": name.value}]
+  usersList.value.forEach((item) => {
+    userN.push({"username": item.name})
+  })
+
+  await getData("https://" + address + "/api/v1/user/keys", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + jwtToken.value,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "usernames": userN
+    })
+  }).then(async (data) => {
+    for (const item of data.data) {
+      let key = await window.crypto.subtle.importKey(
+          "jwk",
+          JSON.parse(item.publicKey),
+          {name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256"},
+          true,
+          ["encrypt"])
+
+      let enSyKey = arrayBufferToBase64(await window.crypto.subtle.encrypt({name: "RSA-OAEP"}, key, symmetricKey))
+      users.push({"username": item.username, "encryptedSymmetricKey": enSyKey})
+    }
+  })
+  await getData("https://" + address + "/api/v1/chat", {
+    method: "POST",
+    headers: {
+      "Authorization": "Bearer " + jwtToken.value,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      "chatName": chatName.value,
+      "usersDetails": users
     })
   }).then((data) => {
     console.log(data.data)
-    chats.value.push({id: data.data, name: chatName.value, lastMessage: ""})
   })
 }
 
 const message = ref("")
 
-function sendMessage() {
+async function sendMessage() {
   if (socket.value && connectionStatus.value === 'connected') {
-    console.log("Sended:", {textMessage: message.value})
+    let chatik = chats.value[chats.value.findIndex(c => c.id == activeChatId.value)]
+    let key = chatik.symmetricKey
+
+    let iv = window.crypto.getRandomValues(new Uint8Array(12))
+
+    let version = new Uint8Array([0x01])
+
+    let contentMessage = await window.crypto.subtle.encrypt({
+      "name": "AES-GCM",
+      "iv": iv
+    }, key, new TextEncoder().encode(message.value))
+
+    let totalLength = version.length + iv.length + contentMessage.byteLength
+    let result = new Uint8Array(totalLength)
+
+    let offset = 0;
+    result.set(version, offset)
+    offset += version.length
+    result.set(iv, offset)
+    offset += iv.length
+    result.set(new Uint8Array(contentMessage), offset)
+    let kok = arrayBufferToBase64(result)
+
     socket.value.publish({
       destination: "/app/chat/" + activeChatId.value + "/message/post",
-      body: JSON.stringify({"content": message.value}),
-      headers: {"Authorization": "Bearer " + jwtToken.value}
-    })
-    console.log({
-      destination: "/app/chat/" + activeChatId.value + "/message/post",
-      body: {"content": message.value},
+      body: JSON.stringify({"content": kok}),
       headers: {"Authorization": "Bearer " + jwtToken.value}
     })
   }
   message.value = ''
 }
+
+const usersList = ref([])
+
+const userToGroup = ref('')
+
+function addUser() {
+  if (userToGroup.value == "") return;
+  usersList.value.push({name: userToGroup.value})
+  userToGroup.value = ''
+}
+
+function removeUser(user) {
+  usersList.value = usersList.value.filter((t) => t !== user)
+}
 </script>
 
 <template>
-  <div v-if="haventJWT" id="autorazeBlocker" :class="{selected: isAuth, unselected: !isAuth}">
+  <div v-if="haventJWT" id="autorazeBlocker">
     <div id="autorizationForm" :class="{selected: !isAuth, unselected: isAuth}">
       <div id="changeAutorization">
         <button id="LoginButton" @click="isAuth=true">Вход</button>
         <button id="RegButton" @click="isAuth=false">Регистрация</button>
+        <p v-if="passNot || passCh" id="error">{{ errorMessage }}</p>
       </div>
-      <p v-if="passNot || passCh" id="error">{{ errorMessage }}</p>
       <form :class="haveError" id="login" v-if=isAuth @submit.prevent="login">
         <input v-model="userLogin" required placeholder="Логин">
         <input type="password" v-model="userPassword" required placeholder="Пароль">
@@ -308,8 +630,8 @@ function sendMessage() {
         <input type="password" v-model="userPassword" required placeholder="Пароль">
         <input v-model="userPasswordConfirmed"
                placeholder="Подтвердите пароль"
-               required
                type="password"
+               required
                @input="passCheck">
         <button class="inBut">Зарегистрироваться</button>
       </form>
@@ -319,43 +641,63 @@ function sendMessage() {
   <div v-if="!haventJWT" id="ForChats">
     <div id="chatSelector">
       <div v-for="chat in chats"
-           :class="{selected: activeChatId === chat.id}"
            class="chat"
-           @click="selectChat(chat.id)">
+           :class="{selected: activeChatId === chat.id}"
+           @click="selectChat(chat.id, chat.name)">
         <p class="chatAvatar"/>
         <p class="chatName">{{ chat.name }}</p>
         <p class="chatLastMessage">{{ chat.lastMessage }}</p>
       </div>
     </div>
     <div v-if="activeChatId != -1" id="chatChatting">
+      <div id="chatHeader">
+        <button id="chatHeaderLeave" @click="activeChatId = -1">🡨</button>
+        <p id="chatHeaderName">{{ chatHeaderName }}</p>
+      </div>
       <ul class="messages">
-        <li v-for="chats in chatMessages" :key="chats.id" class="message">
+        <li v-for="chats in chatMessages" :key="chats.id" class="messageChat">
           <li v-for="message in chats.message" v-if="chats.id == activeChatId" class="message">
             {{ message.sender }} : {{ message.content }}
           </li>
         </li>
       </ul>
       <form id="chatInput" @submit.prevent="sendMessage">
-        <input v-model="message" placeholder="Сообщение" required>
-        <button>=></button>
+        <input id="chatInputInputer" v-model="message" placeholder="Сообщение" required>
+        <button id="chatInputSend">▶</button>
       </form>
     </div>
     <button id="addChat" @click="isChatMenu=true">+</button>
     <div v-if="isChatMenu" id="addChatMenu" @click="isChatMenu=false">
-      <div id="addChatSettings" @click.stop>
+      <div id="addChatSettings" :class="{selected: isGroup, unselected: !isGroup}" @click.stop>
         <div id="addChatTopHeader">
-          <button class="topHeaderButton"
-                  style="background-color: white;color:black;border-radius: 15px 0 0 0;"
+          <button id="selectUser"
+                  class="topHeaderButton"
                   @click="changeAddChatMode(false)">Пользователь
           </button>
-          <button class="topHeaderButton"
-                  style="background-color: black;color:white;border-radius: 0 15px 0 0;"
+          <button id="selectGroup"
+                  class="topHeaderButton"
                   @click="changeAddChatMode(true)">Группа
           </button>
         </div>
-        <form id="addChatForm" :class="haveError" @submit.prevent="addChatF">
-          <input v-model="chatName" name="username" placeholder="Название группы" required>
-          <input v-model="username" name="username" placeholder="Имя пользователя" required>
+        <form v-if="isGroup" id="addChatForm" :class="haveError" @submit.prevent="addGroupChatF">
+          <input v-model="chatName" name="chatName" placeholder="Название группы" required>
+          <div id="addUserToGroup">
+            <p class="defText">Добавить пользователя:</p>
+            <div id="addUserToGroupDiv">
+              <input v-model="userToGroup" name="user" placeholder="Имя пользователя"/>
+              <button type="button" @click="addUser">Добавить</button>
+            </div>
+            <p class="defText">Список пользователей:</p>
+          </div>
+          <div v-for="user in usersList" class="addUserToGroupBottom">
+            <p>{{ user.name }}</p>
+            <button type="button" @click="removeUser(user)">X</button>
+          </div>
+          <button class="inBut" type="submit">Создать группу</button>
+        </form>
+        <form v-else id="addChatForm" :class="haveError" @submit.prevent="addChatF">
+          <input v-model="chatName" placeholder="Название группы" required>
+          <input v-model="username" placeholder="Имя пользователя" required>
           <button class="inBut" type="submit">Создать группу</button>
         </form>
       </div>
@@ -364,19 +706,159 @@ function sendMessage() {
 </template>
 
 <style>
+#addUserToGroup {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.addUserToGroupBottom {
+  border: 1px solid black;
+  display: grid;
+  grid-template-columns: 4fr 1fr;
+}
+
+.addUserToGroupBottom p {
+  height: 50%;
+  font-size: 100%;
+  margin: 0;
+  font-weight: bold;
+  font-family: "Arial";
+  text-align: center;
+  color: black;
+}
+
+.addUserToGroupBottom button {
+  border: 0px;
+  padding: 0px;
+  background-color: black;
+  color: white;
+  font-weight: bold;
+  font-family: "Arial";
+}
+
+#addUserToGroupDiv {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+}
+
+#addUserToGroupDiv button {
+  padding: 0;
+  border: 0;
+  color: white;
+  background-color: black;
+}
+
+.defText {
+  margin: 0;
+  text-align: center;
+  font-weight: bold;
+  font-family: "Arial";
+  color: black;
+}
+
+#chatInputSend {
+  height: 4vh;
+  width: 4vh;
+  border: 0;
+  padding: 0;
+  margin-bottom: 0.5vh;
+  margin-left: 1vh;
+  margin-right: 1vw;
+  border-radius: 100%;
+  background-color: white;
+  font-weight: bold;
+  font-size: 1.75vh;
+  font-family: "Arial";
+  color: black;
+}
+
+#chatInputInputer {
+  background-color: black;
+  color: white;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  padding-left: 1vw;
+  width: calc(100% - 5vh - 1px - 1vw);
+  font-weight: bold;
+  font-size: 1.75vh;
+  font-family: "Arial";
+  vertical-align: bottom;
+}
+
+#chatInputInputer:focus {
+  outline: none !important;
+}
+
+#chatInput {
+  margin: 0;
+  height: 5vh;
+  border-top: 1px solid white;
+}
+
+#chatHeader {
+  margin: 0;
+  height: 5vh;
+  border-bottom: 1px solid white;
+}
+
+#chatHeaderLeave {
+  padding: 0;
+  border: 0;
+  margin-left: 1vw;
+  height: 5vh;
+  width: 4vh;
+  background-color: black;
+  color: white;
+  font-weight: 999;
+  font-size: 4vh;
+  font-family: "Arial";
+}
+
+#chatHeaderName {
+  float: right;
+  margin: 0;
+  width: calc(74vw - 5vh);
+  margin-top: 1vh;
+  height: 4vh;
+  color: white;
+  font-weight: bold;
+  font-size: 3vh;
+  font-family: "Arial";
+}
+
 #chatChatting {
   margin-left: 25vw;
   width: 75vw;
+  min-height: 100vh;
 }
 
 .messages {
   margin: 0;
   padding: 0;
+  padding-left: 1vw;
+  padding-right: 1vw;
+  height: calc(90vh - 2px);
+  align-items: end;
+}
+
+.messageChat {
+  list-style: none;
+  max-height: 100%;
+  overflow-y: auto;
+  -ms-overflow-style: none;
+}
+
+.messageChat::-webkit-scrollbar {
+  width: 0;
 }
 
 .message {
   color: white;
   list-style: none;
+  font-weight: bold;
+  font-size: 1.75vh;
+  font-family: "Arial";
 }
 
 #ForChats {
@@ -389,29 +871,37 @@ function sendMessage() {
 
 #chatSelector {
   float: left;
-  background-color: rgb(75, 75, 75);
-  width: 25vw;
-  min-height: 100vh;
+  background-color: black;
+  border-right: 1px solid white;
+  width: calc(max(1vh, 1vw) * 25);
+  height: 100vh;
+  overflow: auto;
+}
+
+#chatSelector::-webkit-scrollbar {
+  width: 0;
 }
 
 .chat {
   width: 25vw;
   height: 6vh;
-  background-color: rgb(100, 100, 100);
+  background-color: black;
+  border-bottom: 1px solid white;
 }
 
-.chatAvatar {
+.chat .chatAvatar {
   float: left;
   width: 5vh;
   height: 5vh;
   margin: 0;
   margin-left: 0.5vh;
   margin-top: 0.5vh;
-  background-color: rgb(125, 125, 125);
+  background-color: white;
   border-radius: 100%;
 }
 
-.chatName {
+.chat .chatName {
+  overflow: hidden;
   float: right;
   margin: 0;
   width: calc(25vw - 6vh);
@@ -419,34 +909,49 @@ function sendMessage() {
   font-weight: bold;
   font-size: 1.75vh;
   height: 2vh;
-  margin-bottom: 0.5vh;
-  margin-top: 0.5vh;
+  padding-bottom: 0.5vh;
+  padding-top: 0.5vh;
   font-family: "Arial";
 }
 
-.chatLastMessage {
+.chat .chatLastMessage {
+  overflow: hidden;
   float: right;
   margin: 0;
   width: calc(25vw - 6vh);
-  color: rgb(175, 175, 175);
+  color: white;
   font-weight: bold;
-  margin-bottom: 0.5vh;
-  margin-top: 0.5vh;
+  font-size: 1.75vh;
   height: 2vh;
+  padding-bottom: 0.5vh;
+  padding-top: 0.5vh;
   font-family: "Arial";
+}
+
+.chat.selected .chatAvatar {
+  background-color: black;
+}
+
+.chat.selected .chatName {
+  color: black;
+}
+
+.chat.selected .chatLastMessage {
+  color: black;
 }
 
 #addChat {
   position: fixed;
-  top: calc(100% - 5.5vw);
-  left: calc(25vw - 5.5vw);
-  width: 5vw;
-  height: 5vw;
+  top: calc(100% - calc(max(1vh, 1vw) * 5.5));
+  left: calc(max(1vh, 1vw) * 19.5);
+  width: calc(max(1vh, 1vw) * 5);
+  height: calc(max(1vh, 1vw) * 5);
   border-radius: 100%;
   border: 0;
   background-color: white;
-  color: rgb(100, 100, 100);
-  font-size: 4vw;
+  color: black;
+  font-size: calc(max(1vh, 1vw) * 4);
+  padding: 0;
   text-align: center;
 }
 
@@ -459,18 +964,9 @@ function sendMessage() {
   background-color: rgba(50, 50, 50, 50%);
 }
 
-#addChatSettings {
-  border-radius: 15px;
-  margin-left: calc(50vw - (25vw / 2));
-  margin-top: calc(50vh - (50vh / 2));
-  width: 25vw;
-  height: 50vh;
-  background-color: rgb(75, 75, 75);
-}
-
 #addChatTopHeader {
-  width: 25vw;
-  height: 6vh;
+  width: calc(max(1vh, 1vw) * 30);
+  height: calc(max(1vh, 1vw) * 6);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: 1fr;
@@ -480,16 +976,74 @@ function sendMessage() {
   text-align: center;
   border: 0;
   padding: 0;
-  font-weight: bold;
+}
+
+#selectGroup {
+  background-color: white;
+  color: black;
   font-size: 100%;
+  font-weight: bold;
+  font-family: "Arial";
+}
+
+#selectUser {
+  background-color: black;
+  color: white;
+  font-size: 100%;
+  font-weight: bold;
   font-family: "Arial";
 }
 
 #addChatForm {
   margin: 0;
-  width: 25vw;
-  height: 44vh;
-  border-radius: 0 0 15px 15px;
+  width: calc(max(1vh, 1vw) * 28);
+  height: calc(max(1vh, 1vw) * 37.5);
+  padding-left: calc(max(1vh, 1vw) * 1);
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-row-gap: calc(max(1vh, 1vw) * 0.5);
+}
+
+#addChatSettings {
+  border: 1px solid white;
+  margin-left: calc(50vw - (calc(max(1vh, 1vw) * 30) / 2));
+  margin-top: calc(50vh - (calc(max(1vh, 1vw) * 45) / 2));
+  width: calc(max(1vh, 1vw) * 30);
+  height: calc(max(1vh, 1vw) * 45);
+}
+
+#addChatSettings input {
+  //font-size: 100%;
+  font-weight: bold;
+  font-family: "Arial";
+  text-align: center;
+  padding: 0;
+}
+
+#addChatSettings.selected input {
+  background-color: white;
+  border: 1px solid black;
+  color: black;
+}
+
+#addChatSettings.unselected input {
+  background-color: black;
+  border: 1px solid white;
+  color: white;
+}
+
+#addChatSettings.selected .inBut {
+  background-color: black;
+  border: 0;
+  padding: 0;
+  color: white;
+}
+
+#addChatSettings.unselected .inBut {
+  background-color: white;
+  border: 0;
+  padding: 0;
+  color: black;
 }
 </style>
 <style>
@@ -499,10 +1053,11 @@ function sendMessage() {
   left: 0;
   width: 100vw;
   height: 100vh;
+  background-color: black;
 }
 
 #autorizationForm {
-  border-radius: 20px 20px 15px 15px;
+  border: 1px solid white;
   width: calc(max(1vh, 1vw) * 25);
   height: calc(max(1vh, 1vw) * 20);
   margin-left: calc(50vw - (max(1vh, 1vw) * 12.5));
@@ -517,7 +1072,6 @@ function sendMessage() {
   font-weight: bold;
   font-size: 100%;
   font-family: "Arial";
-  border-radius: 15px 0 0 0;
 }
 
 #RegButton {
@@ -528,7 +1082,6 @@ function sendMessage() {
   font-weight: bold;
   font-size: 100%;
   font-family: "Arial";
-  border-radius: 0 15px 0 0;
 }
 
 #changeAutorization {
@@ -543,56 +1096,55 @@ function sendMessage() {
 #login {
   margin: 0;
   width: 80%;
-  height: 70%;
+  height: calc(max(1vh, 1vw) * 14.5);
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: repeat(3, 1fr);
   grid-row-gap: calc(max(1vh, 1vw) * 0.5);
-  padding-left: 10%;
+  padding-left: calc(max(1vh, 1vw) * 2.5);
   text-align: center;
 }
 
 #reg {
   margin: 0;
   width: 80%;
-  height: 70%;
+  height: calc(max(1vh, 1vw) * 14.5);
   display: grid;
   grid-template-columns: 1fr;
   grid-template-rows: repeat(4, 1fr);
   grid-row-gap: calc(max(1vh, 1vw) * 0.25);
-  padding-left: 10%;
+  padding-left: calc(max(1vh, 1vw) * 2.5);
+  text-align: center;
 }
 
 .error {
-  padding-top: 10%;
+  padding-top: calc(max(1vh, 1vw) * 1.5);
 }
 
 .noError {
-  padding-top: 5%;
+  padding-top: calc(max(1vh, 1vw) * 0.75);
 }
 
 #autorizationForm.unselected input {
   background: rgb(0, 0, 0);
   color: white;
   font-weight: bold;
-  font-size: 100%;
-  width: 100%;
-  border-radius: 15px;
   font-family: "Arial";
+  width: calc(max(1vh, 1vw) * 20);
+  font-size: 100%;
 
   text-align: center;
-  border: 2px solid rgb(255, 255, 255);
+  border: 1px solid white;
   padding: 0px;
 }
 
 #autorizationForm.selected input {
-  background: rgb(255, 255, 255);
-  color: rgb(0, 0, 0);
+  background: white;
+  color: black;
   font-weight: bold;
-  font-size: 100%;
   font-family: "Arial";
-  width: 100%;
-  border-radius: 15px;
+  width: calc(max(1vh, 1vw) * 20);
+  font-size: 100%;
 
   text-align: center;
   border: 2px solid rgb(0, 0, 0);
@@ -600,17 +1152,17 @@ function sendMessage() {
 }
 
 #autorizationForm.selected .inBut {
-  background-color: rgb(0, 0, 0);
-  border-radius: 15px;
+  background-color: black;
   border: 0;
-  color: rgb(255, 255, 255);
+  padding: 0;
+  color: white;
 }
 
 #autorizationForm.unselected .inBut {
-  background-color: rgb(255, 255, 255);
-  border-radius: 15px;
+  background-color: white;
   border: 0;
-  color: rgb(0, 0, 0);
+  padding: 0;
+  color: black;
 }
 
 .inBut {
@@ -620,24 +1172,20 @@ function sendMessage() {
 }
 
 #error {
-  position: absolute;
-  top: 21%;
-  left: 50%;
-  transform: translate(-50%);
-  text-align: center;
-  width: 100%;
-  height: 10%;
-  font-size: 75%;
+  width: calc(max(1vh, 1vw) * 25);
+  font-size: calc(max(1vh, 1vw) * 1.25);
   margin: 0;
+  margin-top: calc(max(1vh, 1vw) * 4);
   color: red;
   font-family: "Arial";
+  position: fixed;
 }
 
 .unselected {
-  background: rgb(0, 0, 0);
+  background: black;
 }
 
 .selected {
-  background: rgb(255, 255, 255);
+  background: white;
 }
 </style>

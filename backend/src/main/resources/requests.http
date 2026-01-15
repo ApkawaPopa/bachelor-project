@@ -1,5 +1,5 @@
 ### Зарегистрироваться
-POST http://{{host}}:{{port}}/api/v1/auth/register
+POST https://{{host}}:{{port}}/api/v1/auth/register
 Content-Type: application/json
 
 {
@@ -18,11 +18,11 @@ Content-Type: application/json
 
 
 ### Войти
-POST http://{{host}}:{{port}}/api/v1/auth/login
+POST https://{{host}}:{{port}}/api/v1/auth/login
 Content-Type: application/json
 
 {
-  "username": "username",
+  "username": "username112asd3",
   "passwordHash": "passsssssssssssssssssssssssssssssssssssssssssssssssssssswordHash"
 }
 
@@ -35,7 +35,7 @@ Content-Type: application/json
 
 
 ### Опубликовать сообщение Example API
-POST http://{{host}}:{{port}}/api/v1/example
+POST https://{{host}}:{{port}}/api/v1/example
 Content-Type: application/json
 Authorization: Bearer {{jwt}}
 
@@ -52,7 +52,7 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить все сообщения Example API
-GET http://{{host}}:{{port}}/api/v1/example
+GET https://{{host}}:{{port}}/api/v1/example
 Authorization: Bearer {{jwt}}
 
 ###
@@ -76,7 +76,7 @@ Authorization: Bearer {{jwt}}
 
 
 ### Получить сообщение по {{id}} Example API
-GET http://{{host}}:{{port}}/api/v1/example/{{exampleId}}
+GET https://{{host}}:{{port}}/api/v1/example/{{exampleId}}
 Authorization: Bearer {{jwt}}
 
 ###
@@ -91,18 +91,18 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить токен для подключения к вебсокету
-POST http://{{host}}:{{port}}/api/v1/auth/ws-token
+POST https://{{host}}:{{port}}/api/v1/auth/ws-token
 Authorization: Bearer {{jwt}}
 
 ###
 #{
 #  "code": 201,
 #  "message": "Created",
-#  "data": "9c623f1f-9a3c-4a7a-8d84-4d59f6a3dab2" // токен для подключения к http://{{host}}:{{port}}/ws?token=
+#  "data": "9c623f1f-9a3c-4a7a-8d84-4d59f6a3dab2" // токен для подключения к https://{{host}}:{{port}}/ws?token=
 #}
 
 ### Создать чат
-POST http://{{host}}:{{port}}/api/v1/chat
+POST https://{{host}}:{{port}}/api/v1/chat
 Content-Type: application/json
 Authorization: Bearer {{jwt}}
 
@@ -134,7 +134,7 @@ Authorization: Bearer {{jwt}}
 
 
 ### Получить информацию о чате по {{id}} // лучше использовать GET /api/v1/chat/{{chatId}}/message
-GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}
+GET https://{{host}}:{{port}}/api/v1/chat/{{chatId}}
 Authorization: Bearer {{jwt}}
 
 ###
@@ -159,7 +159,7 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить список пользователей чата
-GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/users
+GET https://{{host}}:{{port}}/api/v1/chat/{{chatId}}/users
 Authorization: Bearer {{jwt}}
 
 ###
@@ -179,7 +179,7 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить список чатов пользователя с последними сообщениями и симметричными ключами в порядке даты последнего сообщения
-GET http://{{host}}:{{port}}/api/v1/user/chats
+GET https://{{host}}:{{port}}/api/v1/user/chats
 Authorization: Bearer {{jwt}}
 
 ###
@@ -232,7 +232,7 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить список всех сообщений чата в порядке даты сообщения
-GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message
+GET https://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message
 Authorization: Bearer {{jwt}}
 
 ###
@@ -265,7 +265,7 @@ Authorization: Bearer {{jwt}}
 
 
 ### Изменить сообщение по {{id}}
-PATCH http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message/{{messageId}}
+PATCH https://{{host}}:{{port}}/api/v1/chat/{{chatId}}/message/{{messageId}}
 Content-Type: application/json
 Authorization: Bearer {{jwt}}
 
@@ -281,7 +281,7 @@ Authorization: Bearer {{jwt}}
 #}
 
 ### Получить публичные ключи пользователей по username
-GET http://{{host}}:{{port}}/api/v1/user/keys
+GET https://{{host}}:{{port}}/api/v1/user/keys
 Content-Type: application/json
 Authorization: Bearer {{jwt}}
 
@@ -322,7 +322,7 @@ Authorization: Bearer {{jwt}}
 
 
 ### Получить свой зашифрованный симметричный ключ по {{id}} чата
-GET http://{{host}}:{{port}}/api/v1/chat/{{chatId}}/key
+GET https://{{host}}:{{port}}/api/v1/chat/{{chatId}}/key
 Authorization: Bearer {{jwt}}
 
 #{

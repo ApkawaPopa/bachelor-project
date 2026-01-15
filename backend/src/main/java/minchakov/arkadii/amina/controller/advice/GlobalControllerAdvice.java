@@ -1,5 +1,6 @@
 package minchakov.arkadii.amina.controller.advice;
 
+import jakarta.validation.ValidationException;
 import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.dto.StompResponse;
 import minchakov.arkadii.amina.exception.AppException;
@@ -13,6 +14,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 import java.util.Map;
@@ -31,6 +33,12 @@ public class GlobalControllerAdvice {
     }
 
     @ExceptionHandler
+    public RestResponse<Void> handleValidationErrors(ValidationException e) {
+        e.printStackTrace();
+        return new RestResponse<>(400, "Validation failed: " + e.getMessage());
+    }
+
+    @ExceptionHandler
     public RestResponse<Void> handleAppException(AppException e) {
         return new RestResponse<>(e.getStatus().value(), e.getMessage());
     }
@@ -43,6 +51,11 @@ public class GlobalControllerAdvice {
     @ExceptionHandler
     public RestResponse<Void> handleAccessDenied(AccessDeniedException e) {
         return new RestResponse<>(403, e.getMessage());
+    }
+
+    @ExceptionHandler
+    public RestResponse<Void> handleResourceNotFound(NoResourceFoundException e) {
+        return new RestResponse<>(404, e.getMessage());
     }
 
     @ExceptionHandler

@@ -17,6 +17,10 @@ public class ChatCreateOwnUsernameValidator
         List<ChatCreateUserDetailsDTO> chatCreateUserDetailsDTOS,
         ConstraintValidatorContext constraintValidatorContext
     ) {
+        if (chatCreateUserDetailsDTOS == null) {
+            return false;
+        }
+
         try {
             var currentUserUsername = ((User) SecurityContextHolder.getContext()
                                                                    .getAuthentication()

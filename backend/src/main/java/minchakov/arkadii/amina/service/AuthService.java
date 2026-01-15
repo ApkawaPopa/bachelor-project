@@ -2,6 +2,7 @@ package minchakov.arkadii.amina.service;
 
 import jakarta.validation.Valid;
 import minchakov.arkadii.amina.dto.LoginDTO;
+import minchakov.arkadii.amina.dto.OutAuthDTO;
 import minchakov.arkadii.amina.dto.RegisterDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.User;
@@ -36,28 +37,37 @@ public class AuthService {
         this.webSocketTokenRepository = webSocketTokenRepository;
     }
 
-    public String register(@Valid RegisterDTO registerDTO) {
+    public OutAuthDTO register(@Valid RegisterDTO registerDTO) {
         var userToRegister = new User(
             registerDTO.username(),
-            registerDTO.passwordHash(),
-            registerDTO.encryptedPrivateKey(),
-            registerDTO.publicKey()
+            registerDTO.passwordHash(), registerDTO.publicKey(), registerDTO.encryptedPrivateKey()
         );
 
         var hashedPassword = userToRegister.getPasswordHash();
         var hashedPasswordHash = passwordEncoder.encode(hashedPassword);
         userToRegister.setPasswordHash(hashedPasswordHash);
         var savedUser = userRepository.save(userToRegister);
-        return jwtUtil.createJwt(savedUser);
+
+        return new OutAuthDTO(
+            jwtUtil.createJwt(savedUser),
+            savedUser.getUsername(),
+            savedUser.getPublicKey(),
+            savedUser.getEncryptedPrivateKey()
+        );
     }
 
-    public String login(LoginDTO loginDTO) {
+    public OutAuthDTO login(LoginDTO loginDTO) {
         var foundUserOpt = userRepository.findByUsername(loginDTO.username());
         if (foundUserOpt.isPresent()) {
             var hashedOncePassword = loginDTO.passwordHash();
             var foundUser = foundUserOpt.get();
             if (passwordEncoder.matches(hashedOncePassword, foundUser.getPasswordHash())) {
-                return jwtUtil.createJwt(foundUser);
+                return new OutAuthDTO(
+                    jwtUtil.createJwt(foundUser),
+                    foundUser.getUsername(),
+                    foundUser.getPublicKey(),
+                    foundUser.getEncryptedPrivateKey()
+                );
             }
         }
         throw new BadCredentialsException("Wrong login or password");
