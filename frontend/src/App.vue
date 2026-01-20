@@ -14,7 +14,7 @@ const name = ref('')
 const jwtToken = ref('')
 const apiData = ref(null)
 
-let address = "192.168.1.44:56234"
+let address = "192.168.0.10:56234"
 
 const chats = ref([])
 
@@ -197,50 +197,84 @@ const connect = (token) => {
       chats.value = topChat.concat(chats.value)
 
       socket.value.subscribe("/topic/chat/" + chatId, async (message2) => {
-            let chatIdx = chats.value.findIndex(c => c.id == chatId)
-            let decodedBlob = base64ToArrayBuffer(JSON.parse(message2.body).data.content)
-            let iv = decodedBlob.slice(1, 13)
-            let content = decodedBlob.slice(13)
-            let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
-              "name": "AES-GCM",
-              "iv": iv
-            }, chats.value[chatIdx].symmetricKey, content))
-            chats.value[chatIdx].lastMessage = decryptedMessage
-            let currentChatMessages = chatMessages.value.find(x => x.id == chatId)
-            if (currentChatMessages) {
-              currentChatMessages.message.push({
-                sender: JSON.parse(message2.body).data.sender,
-                content: decryptedMessage,
-                createdAt: JSON.parse(message2.body).data.createdAt
-              })
-            }
-            let topChat = chats.value.splice(chatIdx, 1)
-            chats.value = topChat.concat(chats.value)
-          },
-          {"Authorization": "Bearer " + jwtToken.value})
-    })
-    chats.value.forEach((item) => {
-      socket.value.subscribe("/topic/chat/" + item.id, async (message) => {
-        let chatIdx = chats.value.findIndex(c => c.id == item.id)
-        let decodedBlob = base64ToArrayBuffer(JSON.parse(message.body).data.content)
+        let messageBody = JSON.parse(message2.body).data
+        let chatIdx = chats.value.findIndex(c => c.id == chatId)
+        let decodedBlob = base64ToArrayBuffer(messageBody.content)
         let iv = decodedBlob.slice(1, 13)
         let content = decodedBlob.slice(13)
         let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
           "name": "AES-GCM",
           "iv": iv
         }, chats.value[chatIdx].symmetricKey, content))
-        chats.value[chatIdx].lastMessage = decryptedMessage
-        let currentChatMessages = chatMessages.value.find(x => x.id == item.id)
+        messageBody.content = decryptedMessage
+        messageBody.receivers = Array()
+        chats.value[chatIdx].lastMessage = messageBody.content
+        let currentChatMessages = chatMessages.value.find(x => x.id == chatId)
         if (currentChatMessages) {
-          currentChatMessages.message.push({
-            sender: JSON.parse(message.body).data.sender,
-            content: decryptedMessage,
-            createdAt: JSON.parse(message.body).data.createdAt
-          })
+          currentChatMessages.message.push(messageBody)
         }
         let topChat = chats.value.splice(chatIdx, 1)
         chats.value = topChat.concat(chats.value)
+
+        if (chatId == activeChatId.value) {
+          socket.value.publish({
+            destination: "/app/chat/" + activeChatId.value + "/message/" + messageBody.id + "/receive",
+          })
+        }
       })
+
+      socket.value.subscribe("/topic/chat/" + chatId + "/received", async (message2) => {
+        let messageBody = JSON.parse(message2.body).data
+        let currentChatMessages = chatMessages.value.find(x => x.id == chatId)
+        if (currentChatMessages) {
+          let receivedMessage = currentChatMessages.message.find(x => x.id == messageBody.id)
+          if (receivedMessage) {
+            delete messageBody.id;
+            receivedMessage.receivers.push(messageBody);
+          }
+        }
+      })
+    })
+
+    chats.value.forEach((item) => {
+      socket.value.subscribe("/topic/chat/" + item.id, async (message) => {
+        let messageBody = JSON.parse(message.body).data
+        let chatIdx = chats.value.findIndex(c => c.id == item.id)
+        let decodedBlob = base64ToArrayBuffer(messageBody.content)
+        let iv = decodedBlob.slice(1, 13)
+        let content = decodedBlob.slice(13)
+        let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
+          "name": "AES-GCM",
+          "iv": iv
+        }, chats.value[chatIdx].symmetricKey, content))
+        messageBody.content = decryptedMessage
+        messageBody.receivers = Array()
+        chats.value[chatIdx].lastMessage = messageBody.content
+        let currentChatMessages = chatMessages.value.find(x => x.id == item.id)
+        if (currentChatMessages) {
+          currentChatMessages.message.push(messageBody)
+        }
+        let topChat = chats.value.splice(chatIdx, 1)
+        chats.value = topChat.concat(chats.value)
+
+        if (item.id == activeChatId.value) {
+          socket.value.publish({
+            destination: "/app/chat/" + activeChatId.value + "/message/" + messageBody.id + "/receive",
+          })
+        }
+      })
+      socket.value.subscribe("/topic/chat/" + item.id + "/received", async (message) => {
+        let messageBody = JSON.parse(message.body).data
+        let currentChatMessages = chatMessages.value.find(x => x.id == item.id)
+        if (currentChatMessages) {
+          let receivedMessage = currentChatMessages.message.find(x => x.id == messageBody.id)
+          if (receivedMessage) {
+            delete messageBody.id
+            receivedMessage.receivers.push(messageBody)
+          }
+        }
+      })
+
       console.log("Subscribe to:" + item.id)
     })
   }
@@ -256,7 +290,7 @@ const connect = (token) => {
     connectionStatus.value = "disconnected"
     console.log("Connection closed")
 
-    //setTimeout(() => connect(), 5000);
+    setTimeout(() => goIn(), 5000);
   }
 }
 
@@ -431,17 +465,17 @@ const isChatMenu = ref(false)
 const chatMessages = ref([])
 const chatHeaderName = ref("")
 
-async function selectChat(a, name) {
+async function selectChat(a, chatName) {
   activeChatId.value = a
-  chatHeaderName.value = name
-  let chatIsPresent = chatMessages.value.some(x => x.id == activeChatId.value)
-  if (!chatIsPresent) {
+  chatHeaderName.value = chatName
+  let chatIdx = chatMessages.value.findIndex(c => c.id == a)
+  let chatInd = chats.value.findIndex(c => c.id == a)
+  if (chatIdx == -1) {
     await getData("https://" + address + "/api/v1/chat/" + activeChatId.value + "/message", {
       method: "GET",
       headers: {"Authorization": "Bearer " + jwtToken.value}
     }).then(async (data) => {
       let messages = new Proxy(Array(), Array())
-      let chatIdx = chats.value.findIndex(c => c.id == activeChatId.value)
       for (const item of data.data) {
         let decodedBlob = base64ToArrayBuffer(item.content)
         let iv = decodedBlob.slice(1, 13)
@@ -449,13 +483,20 @@ async function selectChat(a, name) {
         let decryptedMessage = new TextDecoder().decode(await window.crypto.subtle.decrypt({
           "name": "AES-GCM",
           "iv": iv
-        }, chats.value[chatIdx].symmetricKey, content))
-        messages.push({sender: item.sender, content: decryptedMessage, createdAt: item.createdAt})
+        }, chats.value[chatInd].symmetricKey, content))
+        item.content = decryptedMessage
+        messages.push(item)
       }
       chatMessages.value.push({id: activeChatId.value, message: messages})
     })
   }
-  console.log(chatMessages.value)
+  if (chatIdx == -1) chatIdx = chatMessages.value.findIndex(c => c.id == a)
+  let currentChatMessages = chatMessages.value[chatIdx].message
+  currentChatMessages.forEach(message => {
+    if (!message.receivers.some(c => c.username == name.value)) {
+      socket.value.publish({destination: "/app/chat/" + a + "/message/" + message.id + "/receive"})
+    }
+  })
 }
 
 const addChatMode = ref('selected')
@@ -590,8 +631,7 @@ async function sendMessage() {
 
     socket.value.publish({
       destination: "/app/chat/" + activeChatId.value + "/message/post",
-      body: JSON.stringify({"content": kok}),
-      headers: {"Authorization": "Bearer " + jwtToken.value}
+      body: JSON.stringify({"content": kok})
     })
   }
   message.value = ''
@@ -656,8 +696,11 @@ function removeUser(user) {
       </div>
       <ul class="messages">
         <li v-for="chats in chatMessages" :key="chats.id" class="messageChat">
-          <li v-for="message in chats.message" v-if="chats.id == activeChatId" class="message">
-            {{ message.sender }} : {{ message.content }}
+          <li v-for="message in chats.message"
+              v-if="chats.id == activeChatId"
+              :class="{messageUs: message.sender == name}"
+              class="message">
+            {{ message.sender != name ? message.sender + ":" : "" }}{{ message.content }}
           </li>
         </li>
       </ul>
@@ -859,6 +902,10 @@ function removeUser(user) {
   font-weight: bold;
   font-size: 1.75vh;
   font-family: "Arial";
+}
+
+.messageUs {
+  text-align: right;
 }
 
 #ForChats {

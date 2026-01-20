@@ -1,6 +1,7 @@
 package minchakov.arkadii.amina.service;
 
 import minchakov.arkadii.amina.dto.GetMessageDTO;
+import minchakov.arkadii.amina.dto.GetMessageReceiverDTO;
 import minchakov.arkadii.amina.dto.UpdateMessageDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.Message;
@@ -51,9 +52,16 @@ public class MessageService extends CrudServiceImpl<Message, Integer> {
         }
 
         var messages = messageRepository.getMessagesByChat_IdOrderByCreatedAtAsc(chatId);
-        return messages.stream()
-                       .map(m -> new GetMessageDTO(m.getSender().getUsername(), m.getContent(), m.getCreatedAt()))
-                       .toList();
+        return messages.stream().map(m -> new GetMessageDTO(
+            m.getId(),
+            m.getSender().getUsername(),
+            m.getContent(),
+            m.getCreatedAt(),
+            m.getReceivers()
+             .stream()
+             .map(r -> new GetMessageReceiverDTO(r.getReceiver().getUsername(), r.getCreatedAt()))
+             .toList()
+        )).toList();
     }
 
     public LocalDateTime updateMessage(UpdateMessageDTO updateMessageDTO, int id, User user) {

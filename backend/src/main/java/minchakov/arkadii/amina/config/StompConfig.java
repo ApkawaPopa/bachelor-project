@@ -7,6 +7,7 @@ import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.exception.NotFoundException;
 import minchakov.arkadii.amina.interceptor.WebSocketHandshakeInterceptor;
 import minchakov.arkadii.amina.model.User;
+import minchakov.arkadii.amina.repository.MessageRepository;
 import minchakov.arkadii.amina.repository.UserChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.util.AppAuthenticationToken;
@@ -41,19 +42,22 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
     private final UserChatRepository userChatRepository;
     private final GlobalControllerAdvice globalControllerAdvice;
     private final SimpMessagingTemplate simpMessagingTemplate;
+    private final MessageRepository messageRepository;
 
     public StompConfig(
         WebSocketHandshakeInterceptor webSocketHandshakeInterceptor,
         UserRepository userRepository,
         UserChatRepository userChatRepository,
         GlobalControllerAdvice globalControllerAdvice,
-        @Lazy SimpMessagingTemplate simpMessagingTemplate
+        @Lazy SimpMessagingTemplate simpMessagingTemplate,
+        MessageRepository messageRepository
     ) {
         this.webSocketHandshakeInterceptor = webSocketHandshakeInterceptor;
         this.userRepository = userRepository;
         this.userChatRepository = userChatRepository;
         this.globalControllerAdvice = globalControllerAdvice;
         this.simpMessagingTemplate = simpMessagingTemplate;
+        this.messageRepository = messageRepository;
     }
 
     @Override
@@ -79,6 +83,7 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
         registration.interceptors(new ChannelInterceptor() {
             @Override
             public Message<?> preSend(Message<?> message, MessageChannel channel) {
+                System.out.println("preSend processing начато");
                 StompHeaderAccessor accessor = MessageHeaderAccessor.getAccessor(message, StompHeaderAccessor.class);
                 if (accessor == null) {
                     throw new InternalServerErrorException(
@@ -96,11 +101,13 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                     var user = userRepository.findByUsername(username)
                                              .orElseThrow(() -> new InternalServerErrorException(
                                                  "User not found while authorizing message"));
+                    System.out.println("user: " + user.getUsername());
 
                     var command = accessor.getCommand();
                     if (command == null) {
                         throw new BadRequestException("Stomp command not set");
                     }
+                    System.out.println(command);
 
                     switch (command) {
                         case SUBSCRIBE -> {
@@ -109,8 +116,15 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                                 throw NotFoundException.stompDefault();
                             }
 
+                            System.out.println("Subscribe destination: " + destination);
+
                             var topicChat = "/topic/chat/";
                             if (destination.startsWith(topicChat)) {
+                                var received = "/received";
+                                if (destination.endsWith(received)) {
+                                    destination = destination.substring(0, destination.length() - received.length());
+                                }
+
                                 var chatIdStr = destination.substring(topicChat.length());
                                 try {
                                     var chatId = Integer.parseInt(chatIdStr);
@@ -129,36 +143,71 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                             }
                         }
 
-                        case MESSAGE -> {
+                        case SEND -> {
                             var destination = accessor.getDestination();
                             if (destination == null) {
                                 throw NotFoundException.stompDefault();
                             }
 
-                            var topicChat = "/topic/chat/";
-                            var messagePost = "/message/post";
-                            if (destination.startsWith(topicChat) && destination.endsWith(messagePost)) {
-                                var chatIdStr = destination.substring(
-                                    topicChat.length(),
-                                    destination.length() - messagePost.length()
-                                );
+                            System.out.println("Message destination: " + destination);
 
-                                try {
-                                    var chatId = Integer.parseInt(chatIdStr);
-                                    if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
-                                        throw new AccessDeniedException("You don't have access to this chat");
+                            var appChat = "/app/chat/";
+                            if (destination.startsWith(appChat)) {
+                                destination = destination.substring(appChat.length());
+
+                                var messagePost = "/message/post";
+                                var receive = "/receive";
+                                if (destination.endsWith(messagePost)) {
+                                    var chatIdStr = destination.substring(
+                                        0,
+                                        destination.length() - messagePost.length()
+                                    );
+
+                                    try {
+                                        var chatId = Integer.parseInt(chatIdStr);
+                                        if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
+                                            throw new AccessDeniedException("You don't have access to this chat");
+                                        }
+                                    } catch (NumberFormatException e) {
+                                        throw NotFoundException.stompDefault();
                                     }
-                                } catch (NumberFormatException e) {
+
+                                    return message;
+                                } else if (destination.endsWith(receive)) {
+                                    destination = destination.substring(0, destination.length() - receive.length());
+                                    var messageString = "/message/";
+                                    var messageStringIndex = destination.indexOf(messageString);
+                                    if (messageStringIndex != -1) {
+                                        var chatIdStr = destination.substring(0, messageStringIndex);
+                                        var messageIdStr = destination.substring(messageStringIndex + messageString.length());
+                                        try {
+                                            var chatId = Integer.parseInt(chatIdStr);
+                                            if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
+                                                throw new AccessDeniedException("You don't have access to this chat");
+                                            }
+
+                                            var messageId = Integer.parseInt(messageIdStr);
+                                            var chatMessage = messageRepository.findById(messageId)
+                                                                               .orElseThrow(NotFoundException::stompDefault);
+                                            if (chatMessage.getChat().getId() != chatId) {
+                                                throw new NotFoundException("Message not found in selected chat");
+                                            }
+                                        } catch (NumberFormatException e) {
+                                            throw NotFoundException.stompDefault();
+                                        }
+                                    } else {
+                                        throw NotFoundException.stompDefault();
+                                    }
+                                } else {
                                     throw NotFoundException.stompDefault();
                                 }
-
-                                return message;
                             }
                         }
                     }
 
                     return message;
                 } catch (Exception e) {
+                    System.out.println("Found exception: " + e.getMessage());
                     simpMessagingTemplate.convertAndSendToUser(
                         username, "/queue/error", switch (e) {
                             case AppException appExc -> globalControllerAdvice.handleMessageAppException(appExc);

@@ -7,11 +7,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -39,6 +41,9 @@ public class Message {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "message")
+    private List<MessageReceiver> receivers;
 
     public Message() {
     }
@@ -106,6 +111,14 @@ public class Message {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public List<MessageReceiver> getReceivers() {
+        return receivers;
+    }
+
+    public void setReceivers(List<MessageReceiver> receivers) {
+        this.receivers = receivers;
     }
 
     @Override

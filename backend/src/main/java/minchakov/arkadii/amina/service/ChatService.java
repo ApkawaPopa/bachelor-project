@@ -40,6 +40,12 @@ public class ChatService {
     }
 
     public Chat createChat(ChatCreateDTO chatCreateDTO) {
+        var chat = saveChatWithUsers(chatCreateDTO);
+        sendChatCreationEvent(chat); // TODO: вынести за транзакцию, а иначе она не успевает завершиться до подписки клиентов на связанные с чатом топики
+        return chat;
+    }
+
+    private Chat saveChatWithUsers(ChatCreateDTO chatCreateDTO) {
         var chat = new Chat(chatCreateDTO.chatName());
         chat.setChatUsers(new HashSet<>());
 
@@ -54,6 +60,10 @@ public class ChatService {
         chat = chatRepository.save(chat);
         userChatRepository.saveAll(chat.getChatUsers());
 
+        return chat;
+    }
+
+    private void sendChatCreationEvent(Chat chat) {
         for (var chatUser : chat.getChatUsers()) {
             var user = chatUser.getUser();
             var stompResponse = StompResponse.success(new AddChatDTO(
@@ -64,8 +74,6 @@ public class ChatService {
             System.out.println(user.getUsername());
             simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat", stompResponse);
         }
-
-        return chat;
     }
 
     @Transactional(readOnly = true)

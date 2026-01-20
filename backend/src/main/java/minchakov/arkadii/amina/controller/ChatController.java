@@ -42,6 +42,7 @@ public class ChatController {
         var messages = requestedChat.getMessages()
                                     .stream()
                                     .map(m -> new ReadChatMessageDTO(
+                                        m.getId(),
                                         m.getContent(),
                                         m.getSender().getUsername(),
                                         m.getCreatedAt()
