@@ -8,4 +8,4 @@ def print_filenames(directory):
 
 
 if __name__ == '__main__':
-    print_filenames(directory=r'C:\Users\ark13\MPU\Диплом\amina\backend\src')
+    print_filenames(directory=r'C:\Users\ark13\MPU\Диплом\amina\frontend\src')
