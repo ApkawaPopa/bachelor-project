@@ -14,7 +14,7 @@ const name = ref('')
 const jwtToken = ref('')
 const apiData = ref(null)
 
-let address = "192.168.0.10:56234"
+let address = "192.168.58.66:56234"
 
 const chats = ref([])
 
@@ -696,11 +696,12 @@ function removeUser(user) {
       </div>
       <ul class="messages">
         <li v-for="chats in chatMessages" :key="chats.id" class="messageChat">
-          <li v-for="message in chats.message"
-              v-if="chats.id == activeChatId"
-              :class="{messageUs: message.sender == name}"
-              class="message">
-            {{ message.sender != name ? message.sender + ":" : "" }}{{ message.content }}
+          <li v-for="message in chats.message" v-if="chats.id == activeChatId" :class="{messageUs: message.sender == name}" class="message">
+            <div class="message-wrapper" :class="{isMe: message.sender == name}">
+              <p class="messageSender" v-if="message.sender != name">{{message.sender}}</p>
+              <p class="messageContent">{{ message.content }}</p>
+              <p class="messageStatus" v-if="message.sender == name">{{message.receivers.length>=2?"🤝":"👋"}}</p>
+            </div>
           </li>
         </li>
       </ul>
@@ -739,9 +740,9 @@ function removeUser(user) {
           <button class="inBut" type="submit">Создать группу</button>
         </form>
         <form v-else id="addChatForm" :class="haveError" @submit.prevent="addChatF">
-          <input v-model="chatName" placeholder="Название группы" required>
+          <input v-model="chatName" placeholder="Название чата" required>
           <input v-model="username" placeholder="Имя пользователя" required>
-          <button class="inBut" type="submit">Создать группу</button>
+          <button class="inBut" type="submit">Создать чат</button>
         </form>
       </div>
     </div>
@@ -897,15 +898,54 @@ function removeUser(user) {
 }
 
 .message {
-  color: white;
   list-style: none;
   font-weight: bold;
   font-size: 1.75vh;
   font-family: "Arial";
+  margin-bottom:5px;
 }
 
 .messageUs {
   text-align: right;
+}
+
+.message-wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  max-width: 80%;
+  min-width: min-content;
+  background-color: black;
+  padding: 3px;
+  border-radius: 12px 12px 12px 0;
+  border:1px solid white;
+}
+
+.isMe{
+  border-radius: 12px 12px 0 12px;
+}
+
+.messageSender{
+  color:grey;
+  padding-bottom: 2px;
+}
+
+.messageContent{
+  color:white;
+}
+
+.messageStatus{
+  text-align: left;
+  margin: 0;
+}
+
+.messageSender, .messageContent {
+  width: fit-content;
+  max-width: 100%;
+  margin: 0;
+  box-sizing: border-box;
+  word-break: break-word; /* Переносит длинные слова */
+  overflow-wrap: break-word; /* Альтернатива для переноса */
+  hyphens: auto;
 }
 
 #ForChats {
