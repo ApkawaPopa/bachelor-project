@@ -14,7 +14,8 @@ const name = ref('')
 const jwtToken = ref('')
 const apiData = ref(null)
 
-let address = "192.168.58.66:56234"
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
+const WS_URL = import.meta.env.VITE_WS_URL
 
 const chats = ref([])
 
@@ -115,7 +116,7 @@ async function goIn() {
       ["decrypt"]
   )
 
-  await getData("https://" + address + "/api/v1/user/chats", {
+  await getData(`https://${API_BASE_URL}/api/v1/user/chats`, {
     method: "GET",
     headers: {"Authorization": "Bearer " + jwtToken.value}
   }).then(async (data) => {
@@ -146,7 +147,7 @@ async function goIn() {
     }
   })
 
-  await getData("https://" + address + "/api/v1/auth/ws-token", {
+  await getData(`https://${API_BASE_URL}/api/v1/auth/ws-token`, {
     method: "POST",
     headers: {"Authorization": "Bearer " + jwtToken.value}
   }).then((data) => {
@@ -161,7 +162,7 @@ onUnmounted(() => {
 const connect = (token) => {
   //socket.value = new SockJS("https://" + address + "/ws/chat?token=" + token)
   socket.value = new StompJs.Client({
-    webSocketFactory: () => new SockJS("https://" + address + "/ws?token=" + token),
+    webSocketFactory: () => new SockJS(`https://${API_BASE_URL}${WS_URL}?token=${token}`),
     connectHeaders: {
       "Authorization": "Bearer " + jwtToken.value
     }
@@ -405,7 +406,7 @@ async function reg() {
   offset += iv.length
   result.set(new Uint8Array(encryptPrivate), offset)
   let kok = arrayBufferToBase64(result)
-  regLog("https://" + address + "/api/v1/auth/register",
+  regLog(`https://${API_BASE_URL}/api/v1/auth/register`,
       {
         "username": userLogin.value,
         "passwordHash": SHA256(userPassword.value).toString(),
@@ -432,7 +433,7 @@ async function reg() {
 function login() {
   console.log("Вход в пользователя:" + userLogin.value + " с паролем:" + userPassword.value)
   console.log("Хеш:", SHA256(userPassword.value).toString())
-  regLog("https://" + address + "/api/v1/auth/login",
+  regLog(`https://${API_BASE_URL}/api/v1/auth/login`,
       {
         "username": userLogin.value,
         "passwordHash": SHA256(userPassword.value).toString()
@@ -471,7 +472,7 @@ async function selectChat(a, chatName) {
   let chatIdx = chatMessages.value.findIndex(c => c.id == a)
   let chatInd = chats.value.findIndex(c => c.id == a)
   if (chatIdx == -1) {
-    await getData("https://" + address + "/api/v1/chat/" + activeChatId.value + "/message", {
+    await getData(`https://${API_BASE_URL}/api/v1/chat/${activeChatId.value}/message`, {
       method: "GET",
       headers: {"Authorization": "Bearer " + jwtToken.value}
     }).then(async (data) => {
@@ -520,7 +521,7 @@ async function addChatF() {
   let symmetricKey = await window.crypto.subtle.exportKey("raw", await generateSymmetricKey())
   let users = []
 
-  await getData("https://" + address + "/api/v1/user/keys", {
+  await getData(`https://${API_BASE_URL}/api/v1/user/keys`, {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + jwtToken.value,
@@ -542,7 +543,7 @@ async function addChatF() {
       users.push({"username": item.username, "encryptedSymmetricKey": enSyKey})
     }
   })
-  await getData("https://" + address + "/api/v1/chat", {
+  await getData(`https://${API_BASE_URL}/api/v1/chat`, {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + jwtToken.value,
@@ -565,7 +566,7 @@ async function addGroupChatF() {
     userN.push({"username": item.name})
   })
 
-  await getData("https://" + address + "/api/v1/user/keys", {
+  await getData(`https://${API_BASE_URL}/api/v1/user/keys`, {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + jwtToken.value,
@@ -587,7 +588,7 @@ async function addGroupChatF() {
       users.push({"username": item.username, "encryptedSymmetricKey": enSyKey})
     }
   })
-  await getData("https://" + address + "/api/v1/chat", {
+  await getData(`https://${API_BASE_URL}/api/v1/chat`, {
     method: "POST",
     headers: {
       "Authorization": "Bearer " + jwtToken.value,
@@ -696,11 +697,14 @@ function removeUser(user) {
       </div>
       <ul class="messages">
         <li v-for="chats in chatMessages" :key="chats.id" class="messageChat">
-          <li v-for="message in chats.message" v-if="chats.id == activeChatId" :class="{messageUs: message.sender == name}" class="message">
+          <li v-for="message in chats.message"
+              v-if="chats.id == activeChatId"
+              :class="{messageUs: message.sender == name}"
+              class="message">
             <div class="message-wrapper" :class="{isMe: message.sender == name}">
-              <p class="messageSender" v-if="message.sender != name">{{message.sender}}</p>
+              <p v-if="message.sender != name" class="messageSender">{{ message.sender }}</p>
               <p class="messageContent">{{ message.content }}</p>
-              <p class="messageStatus" v-if="message.sender == name">{{message.receivers.length>=2?"🤝":"👋"}}</p>
+              <p v-if="message.sender == name" class="messageStatus">{{ message.receivers.length >= 2 ? "🤝" : "👋" }}</p>
             </div>
           </li>
         </li>
@@ -902,7 +906,7 @@ function removeUser(user) {
   font-weight: bold;
   font-size: 1.75vh;
   font-family: "Arial";
-  margin-bottom:5px;
+  margin-bottom: 5px;
 }
 
 .messageUs {
@@ -917,23 +921,23 @@ function removeUser(user) {
   background-color: black;
   padding: 3px;
   border-radius: 12px 12px 12px 0;
-  border:1px solid white;
+  border: 1px solid white;
 }
 
-.isMe{
+.isMe {
   border-radius: 12px 12px 0 12px;
 }
 
-.messageSender{
-  color:grey;
+.messageSender {
+  color: grey;
   padding-bottom: 2px;
 }
 
-.messageContent{
-  color:white;
+.messageContent {
+  color: white;
 }
 
-.messageStatus{
+.messageStatus {
   text-align: left;
   margin: 0;
 }
