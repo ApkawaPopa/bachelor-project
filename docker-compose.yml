@@ -35,7 +35,6 @@ services:
       LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
       KEYSTORE_PASSWORD: ${BACKEND_CERTIFICATE_PASSWORD}
       JWT_SECRET: ${BACKEND_JWT_SECRET}
-      PASSWORD_SALT: ${BACKEND_PASSWORD_SALT}
     networks:
       - backend
 #    restart: unless-stopped

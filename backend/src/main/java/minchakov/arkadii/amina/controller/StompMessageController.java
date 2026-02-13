@@ -34,7 +34,8 @@ public class StompMessageController {
     public StompMessageController(
         UserRepository userRepository,
         ChatRepository chatRepository,
-        MessageRepository messageRepository, MessageReceiverRepository messageReceiverRepository
+        MessageRepository messageRepository,
+        MessageReceiverRepository messageReceiverRepository
     ) {
         this.userRepository = userRepository;
         this.chatRepository = chatRepository;

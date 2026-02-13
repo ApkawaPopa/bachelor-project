@@ -1,8 +1,7 @@
 package minchakov.arkadii.amina.service;
 
-import minchakov.arkadii.amina.dto.AddChatDTO;
 import minchakov.arkadii.amina.dto.ChatCreateDTO;
-import minchakov.arkadii.amina.dto.StompResponse;
+import minchakov.arkadii.amina.dto.ChatCreationEvent;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
@@ -10,7 +9,7 @@ import minchakov.arkadii.amina.model.UserChat;
 import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.UserChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,23 +24,22 @@ public class ChatService {
     private final UserRepository userRepository;
     private final ChatRepository chatRepository;
     private final UserChatRepository userChatRepository;
-    private final SimpMessagingTemplate simpMessagingTemplate;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public ChatService(
         UserRepository userRepository,
         ChatRepository chatRepository,
-        UserChatRepository userChatRepository,
-        SimpMessagingTemplate simpMessagingTemplate
+        UserChatRepository userChatRepository, ApplicationEventPublisher applicationEventPublisher
     ) {
         this.userRepository = userRepository;
         this.chatRepository = chatRepository;
         this.userChatRepository = userChatRepository;
-        this.simpMessagingTemplate = simpMessagingTemplate;
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public Chat createChat(ChatCreateDTO chatCreateDTO) {
         var chat = saveChatWithUsers(chatCreateDTO);
-        sendChatCreationEvent(chat); // TODO: вынести за транзакцию, а иначе она не успевает завершиться до подписки клиентов на связанные с чатом топики
+        applicationEventPublisher.publishEvent(new ChatCreationEvent(chat.getId()));
         return chat;
     }
 
@@ -61,19 +59,6 @@ public class ChatService {
         userChatRepository.saveAll(chat.getChatUsers());
 
         return chat;
-    }
-
-    private void sendChatCreationEvent(Chat chat) {
-        for (var chatUser : chat.getChatUsers()) {
-            var user = chatUser.getUser();
-            var stompResponse = StompResponse.success(new AddChatDTO(
-                chat.getId(),
-                chat.getName(),
-                chatUser.getEncryptedSymmetricKey()
-            ));
-            System.out.println(user.getUsername());
-            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat", stompResponse);
-        }
     }
 
     @Transactional(readOnly = true)
