@@ -54,6 +54,7 @@ create table web_socket_token
 create table message_receiver
 (
     message_id  integer references message (id) on delete cascade not null,
+    chat_id integer references chat (id) on delete cascade not null,
     receiver_id integer references "user" (id) on delete cascade  not null,
     created_at  timestamp                                         not null,
     primary key (message_id, receiver_id)

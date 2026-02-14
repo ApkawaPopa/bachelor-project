@@ -138,7 +138,9 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                                 return message;
                             }
 
-                            if (!destination.equals("/user/queue/error") && !destination.equals("/user/queue/chat")) {
+                            if (!destination.equals("/user/queue/error") &&
+                                !destination.equals("/user/queue/chat") &&
+                                !destination.equals("/user/queue/unread")) {
                                 throw NotFoundException.stompDefault();
                             }
                         }
@@ -152,55 +154,60 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                             System.out.println("Message destination: " + destination);
 
                             var appChat = "/app/chat/";
-                            if (destination.startsWith(appChat)) {
-                                destination = destination.substring(appChat.length());
+                            if (!destination.startsWith(appChat)) {
+                                throw NotFoundException.stompDefault();
+                            }
+                            destination = destination.substring(appChat.length());
 
-                                var messagePost = "/message/post";
-                                var receive = "/receive";
-                                if (destination.endsWith(messagePost)) {
-                                    var chatIdStr = destination.substring(
-                                        0,
-                                        destination.length() - messagePost.length()
-                                    );
+                            var messagePost = "/message/post";
+                            var receive = "/receive";
+                            var edit = "/edit";
+                            var delete = "/delete";
+                            if (destination.endsWith(messagePost)) {
+                                var chatIdStr = destination.substring(0, destination.length() - messagePost.length());
 
-                                    try {
-                                        var chatId = Integer.parseInt(chatIdStr);
-                                        if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
-                                            throw new AccessDeniedException("You don't have access to this chat");
-                                        }
-                                    } catch (NumberFormatException e) {
-                                        throw NotFoundException.stompDefault();
+                                try {
+                                    var chatId = Integer.parseInt(chatIdStr);
+                                    if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
+                                        throw new AccessDeniedException("You don't have access to this chat");
                                     }
-
-                                    return message;
-                                } else if (destination.endsWith(receive)) {
-                                    destination = destination.substring(0, destination.length() - receive.length());
-                                    var messageString = "/message/";
-                                    var messageStringIndex = destination.indexOf(messageString);
-                                    if (messageStringIndex != -1) {
-                                        var chatIdStr = destination.substring(0, messageStringIndex);
-                                        var messageIdStr = destination.substring(messageStringIndex + messageString.length());
-                                        try {
-                                            var chatId = Integer.parseInt(chatIdStr);
-                                            if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
-                                                throw new AccessDeniedException("You don't have access to this chat");
-                                            }
-
-                                            var messageId = Integer.parseInt(messageIdStr);
-                                            var chatMessage = messageRepository.findById(messageId)
-                                                                               .orElseThrow(NotFoundException::stompDefault);
-                                            if (chatMessage.getChat().getId() != chatId) {
-                                                throw new NotFoundException("Message not found in selected chat");
-                                            }
-                                        } catch (NumberFormatException e) {
-                                            throw NotFoundException.stompDefault();
-                                        }
-                                    } else {
-                                        throw NotFoundException.stompDefault();
-                                    }
-                                } else {
+                                } catch (NumberFormatException e) {
                                     throw NotFoundException.stompDefault();
                                 }
+                            } else if (destination.endsWith(receive) || destination.endsWith(edit) ||
+                                       destination.endsWith(delete)) {
+                                var endIsReceive = destination.endsWith(receive);
+                                destination = destination.substring(0, destination.lastIndexOf('/'));
+
+                                var messageString = "/message/";
+                                var messageStringIndex = destination.indexOf(messageString);
+                                if (messageStringIndex == -1) {
+                                    throw NotFoundException.stompDefault();
+                                }
+
+                                var chatIdStr = destination.substring(0, messageStringIndex);
+                                var messageIdStr = destination.substring(messageStringIndex + messageString.length());
+                                try {
+                                    var chatId = Integer.parseInt(chatIdStr);
+                                    if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
+                                        throw new AccessDeniedException("You don't have access to this chat");
+                                    }
+
+                                    var messageId = Integer.parseInt(messageIdStr);
+                                    var chatMessage = messageRepository.findById(messageId)
+                                                                       .orElseThrow(NotFoundException::stompDefault);
+                                    if (chatMessage.getChat().getId() != chatId) {
+                                        throw new NotFoundException("Message not found in selected chat");
+                                    }
+
+                                    if (!endIsReceive && !chatMessage.getSender().equals(user)) {
+                                        throw new AccessDeniedException("You don't have access to this message");
+                                    }
+                                } catch (NumberFormatException e) {
+                                    throw NotFoundException.stompDefault();
+                                }
+                            } else {
+                                throw NotFoundException.stompDefault();
                             }
                         }
                     }

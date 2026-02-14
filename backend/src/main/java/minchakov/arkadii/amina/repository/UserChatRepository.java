@@ -14,4 +14,5 @@ public interface UserChatRepository extends JpaRepository<UserChat, UserChatId> 
     Optional<UserChat> findByUser_IdAndChat_Id(Integer userId, Integer chatId);
 
     boolean existsByUserAndChat_Id(User user, int chatId);
+
 }
