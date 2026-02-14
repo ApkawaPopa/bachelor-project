@@ -13,4 +13,6 @@ public interface MessageRepository extends JpaRepository<Message, Integer> {
     Optional<Message> findFirstByChatOrderByCreatedAtDesc(Chat chat);
 
     List<Message> getMessagesByChat_IdOrderByCreatedAtAsc(Integer chatId);
+
+    int countMessageByChat(Chat chat);
 }

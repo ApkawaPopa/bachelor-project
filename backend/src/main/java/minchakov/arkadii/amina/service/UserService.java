@@ -4,7 +4,9 @@ import minchakov.arkadii.amina.dto.GetUsersKeysOutDTO;
 import minchakov.arkadii.amina.dto.GetUsersKeysUsernameDTO;
 import minchakov.arkadii.amina.dto.ListUserChatsChatDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
+import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
+import minchakov.arkadii.amina.repository.MessageReceiverRepository;
 import minchakov.arkadii.amina.repository.MessageRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,17 @@ public class UserService extends CrudServiceImpl<User, Integer> {
 
     private final UserRepository userRepository;
     private final MessageRepository messageRepository;
+    private final MessageReceiverRepository messageReceiverRepository;
 
-    public UserService(UserRepository userRepository, MessageRepository messageRepository) {
+    public UserService(
+        UserRepository userRepository,
+        MessageRepository messageRepository,
+        MessageReceiverRepository messageReceiverRepository
+    ) {
         super(userRepository);
         this.userRepository = userRepository;
         this.messageRepository = messageRepository;
+        this.messageReceiverRepository = messageReceiverRepository;
     }
 
     @Transactional(readOnly = true)
@@ -56,10 +64,13 @@ public class UserService extends CrudServiceImpl<User, Integer> {
             }
 
             return new ListUserChatsChatDTO(
-                chat.getId(), chat.getName(), userChat.getEncryptedSymmetricKey(),
+                chat.getId(),
+                chat.getName(),
+                userChat.getEncryptedSymmetricKey(),
                 messageContent,
                 messageCreatedAt,
-                sortingDate
+                sortingDate,
+                getUnreadMessagesCount(chat, user)
             );
         }).sorted(Comparator.comparing(ListUserChatsChatDTO::sortingDate).reversed()).toList();
     }
@@ -70,5 +81,12 @@ public class UserService extends CrudServiceImpl<User, Integer> {
                                      .orElseThrow(() -> new InternalServerErrorException("Validator didn't work"));
             return new GetUsersKeysOutDTO(user.getUsername(), user.getPublicKey());
         }).toList();
+    }
+
+    public int getUnreadMessagesCount(Chat chat, User user) {
+        return (int) (
+            messageRepository.countMessageByChat(chat) -
+            messageReceiverRepository.countByChatAndReceiver(chat, user)
+        );
     }
 }

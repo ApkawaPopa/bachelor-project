@@ -7,6 +7,7 @@ public record ListUserChatsChatDTO(
     String name, String encryptedSymmetricKey,
     String messageContent,
     LocalDateTime messageCreatedAt,
-    LocalDateTime sortingDate
+    LocalDateTime sortingDate,
+    int unreadMessagesCount
 ) {
 }
