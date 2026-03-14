@@ -30,9 +30,10 @@ public class MessageReceiver {
     public MessageReceiver() {
     }
 
-    public MessageReceiver(Message message, User receiver) {
+    public MessageReceiver(Message message, User receiver, Chat chat) {
         this.message = message;
         this.receiver = receiver;
+        this.chat = chat;
     }
 
     public Message getMessage() {
@@ -49,6 +50,14 @@ public class MessageReceiver {
 
     public void setReceiver(User receiver) {
         this.receiver = receiver;
+    }
+
+    public Chat getChat() {
+        return chat;
+    }
+
+    public void setChat(Chat chat) {
+        this.chat = chat;
     }
 
     public LocalDateTime getCreatedAt() {

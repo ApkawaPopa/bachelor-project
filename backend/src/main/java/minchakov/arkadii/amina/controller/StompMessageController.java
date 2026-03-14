@@ -81,14 +81,18 @@ public class StompMessageController {
                                            "Message not found while processing receive"));
         var receiver = userRepository.findByUsername(principal.getName())
                                      .orElseThrow(() -> new InternalServerErrorException(
-                                         "User not found from principal while processing message"));
-        applicationEventPublisher.publishEvent(new ChatMessageEvent(chatId, principal.getName()));
+                                         "User not found from principal while processing receive"));
+        var chat = chatRepository.findById(chatId)
+                                 .orElseThrow(() -> new InternalServerErrorException(
+                                     "Chat not found while processing receive"));
 
         if (messageReceiverRepository.existsById(new MessageReceiverId(message, receiver))) {
             throw new BadRequestException("Message already received by this user");
         }
 
-        var messageReceiver = messageReceiverRepository.save(new MessageReceiver(message, receiver));
+        var messageReceiver = messageReceiverRepository.save(new MessageReceiver(message, receiver, chat));
+        applicationEventPublisher.publishEvent(new ChatMessageEvent(chatId, principal.getName()));
+
         return StompResponse.success(new OutReceiveMessageDTO(
             messageId,
             principal.getName(),
@@ -112,8 +116,12 @@ public class StompMessageController {
 
     @MessageMapping("/chat/{chatId}/message/{messageId}/delete")
     @SendTo("/topic/chat/{chatId}/deleted")
-    public StompResponse<Integer> deleteMessage(@DestinationVariable("messageId") int messageId) {
+    public StompResponse<Integer> deleteMessage(
+        @DestinationVariable("chatId") int chatId,
+        @DestinationVariable("messageId") int messageId
+    ) {
         messageRepository.deleteById(messageId);
+        applicationEventPublisher.publishEvent(new ChatMessageEvent(chatId));
         return StompResponse.success(messageId);
     }
 }
