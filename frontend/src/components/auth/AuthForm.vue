@@ -14,20 +14,8 @@
 
     <form v-else id="reg" :class="errorClass" @submit.prevent="handleRegister">
       <input v-model="registerForm.username" placeholder="Логин" required/>
-      <input
-          v-model="registerForm.password"
-          placeholder="Пароль"
-          required
-          type="password"
-          @input="checkPasswordsMatch"
-      />
-      <input
-          v-model="registerForm.passwordConfirm"
-          placeholder="Подтвердите пароль"
-          required
-          type="password"
-          @input="checkPasswordsMatch"
-      />
+      <input v-model="registerForm.password" placeholder="Пароль" required type="password" @input="checkPasswordsMatch"/>
+      <input v-model="registerForm.passwordConfirm" placeholder="Подтвердите пароль" required type="password" @input="checkPasswordsMatch"/>
       <button :disabled="!passwordsMatch" class="inBut" type="submit">Зарегистрироваться</button>
     </form>
   </div>
@@ -142,13 +130,27 @@ const handleRegister = () => {
 #autorizationForm.unselected input {
   background: rgb(0, 0, 0);
   color: white;
+  font-weight: bold;
+  font-family: "Arial";
+  width: calc(max(1vh, 1vw) * 20);
+  font-size: 100%;
+
+  text-align: center;
   border: 1px solid white;
+  padding: 0px;
 }
 
 #autorizationForm.selected input {
   background: white;
   color: black;
+  font-weight: bold;
+  font-family: "Arial";
+  width: calc(max(1vh, 1vw) * 20);
+  font-size: 100%;
+
+  text-align: center;
   border: 2px solid rgb(0, 0, 0);
+  padding: 0px;
 }
 
 #autorizationForm.selected .inBut {

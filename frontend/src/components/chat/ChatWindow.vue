@@ -13,9 +13,7 @@
         <div :class="{ isMe: message.sender === currentUser }" class="message-wrapper">
           <p v-if="message.sender !== currentUser" class="messageSender">{{ message.sender }}</p>
           <p class="messageContent">{{ message.content }}</p>
-          <p v-if="message.sender === currentUser" class="messageStatus">{{
-              message.receivers.length >= 2 ? '🤝' : '👋'
-                                                                         }}</p>
+          <p v-if="message.sender === currentUser" class="messageStatus">{{message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚')}}</p>
         </div>
       </li>
     </ul>

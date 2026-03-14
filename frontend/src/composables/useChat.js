@@ -29,6 +29,25 @@ export function useChat() {
         const data = await get('/api/v1/user/chats');
         const loadedChats = [];
         for (const item of data.data) {
+            const data = new Date(item.sortingDate);
+            data.setUTCHours(data.getHours());
+            const currentData = new Date();
+            let date = "";
+            if (currentData.getFullYear() == data.getFullYear() &&
+                currentData.getMonth() == data.getMonth() &&
+                currentData.getDate() == data.getDate()){
+                date = data.getHours().toString() + ":" + data.getMinutes().toString();
+            }else if (currentData.getFullYear() == data.getFullYear() &&
+                currentData.getMonth() == data.getMonth() &&
+                Math.abs(currentData.getDate() - data.getDate()) < 8){
+                const DayOfNedelya = new Array("пн", "вт", "ср", "чт", "пт", "сб", "вс")
+                date = DayOfNedelya[data.getDay() - 1];
+            }else if (currentData.getFullYear() == data.getFullYear()) {
+                const Month = new Array("янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек.")
+                date = data.getDate().toString() + " " + Month[data.getMonth()];
+            }else{
+                date = data.getDate().toString() + "." + data.getMonth().toString() + "." + data.getFullYear().toString()[2] + data.getFullYear().toString()[3];
+            }
             const encryptedKey = base64ToArrayBuffer(item.encryptedSymmetricKey);
             const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
             const symmetricKey = await importSymmetricKey(rawSymKey);
@@ -41,6 +60,8 @@ export function useChat() {
                 name: item.name,
                 lastMessage,
                 symmetricKey,
+                time: date,
+                unreadMessages: item.unreadMessagesCount,
             });
         }
         chats.value = loadedChats;
@@ -73,9 +94,11 @@ export function useChat() {
                 content: decryptedContent,
                 receivers: data.receivers || [],
             };
-            const messages = chatMessages.value.get(chatId) || [];
-            messages.push(newMessage);
-            chatMessages.value.set(chatId, messages);
+            const messages = chatMessages.value.get(chatId);
+            if (messages) {
+                messages.push(newMessage);
+                chatMessages.value.set(chatId, messages);
+            }
 
             const chatIdx = chats.value.findIndex(c => c.id === chatId);
             if (chatIdx !== -1) {
@@ -99,6 +122,15 @@ export function useChat() {
                 if (targetMsg) {
                     targetMsg.receivers.push(data);
                 }
+            }
+        });
+
+        stompClient.value.subscribe(`/user/queue/unread`, (unread) => {
+            const {data} = JSON.parse(unread.body);
+            console.log(data);
+            const chat = chats.value[chats.value.findIndex(c => c.id == data.chatId)];
+            if (chat) {
+                chat.unreadMessages = data.unreadMessagesCount;
             }
         });
     };

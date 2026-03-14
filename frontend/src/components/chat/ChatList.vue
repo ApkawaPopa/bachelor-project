@@ -9,6 +9,8 @@
     >
       <p class="chatAvatar"/>
       <p class="chatName">{{ chat.name }}</p>
+      <p class="chatTimer">{{ chat.time }}</p>
+      <p v-if="chat.unreadMessages>0" class="chatMessagesCount">{{ chat.unreadMessages }}</p>
       <p class="chatLastMessage">{{ chat.lastMessage }}</p>
     </div>
     <button id="addChat" @click="$emit('open-add-chat')">+</button>
@@ -60,27 +62,61 @@ const selectChat = (chatId) => {
 
 .chat .chatName {
   overflow: hidden;
-  float: right;
+  float: left;
   margin: 0;
-  width: calc(25vw - 6vh);
+  width: calc(25vw - 12vh - 3px);
   color: white;
   font-weight: bold;
   font-size: 1.75vh;
   height: 2vh;
   padding: 0.5vh 0;
+  padding-left: 0.5vh;
   font-family: "Arial";
 }
 
 .chat .chatLastMessage {
   overflow: hidden;
-  float: right;
+  float: left;
   margin: 0;
-  width: calc(25vw - 6vh);
+  width: calc(25vw - 12vh - 3px);
   color: white;
   font-weight: bold;
   font-size: 1.75vh;
   height: 2vh;
   padding: 0.5vh 0;
+  padding-left: 0.5vh;
+  font-family: "Arial";
+}
+.chat .chatMessagesCount{
+  overflow: hidden;
+  float: right;
+  text-align: center;
+  margin: 0;
+  color: black;
+  font-weight: bold;
+  font-size: 2vh;
+  height: 1.5vh;
+  width: 3.25vh;
+  padding-top:0.5vh;
+  padding-bottom:1.25vh;
+  margin-right:0.25vh;
+  margin-top:0.25vh;
+  font-family: "Arial";
+  background-color: white;
+  border-radius: 100%;
+}
+.chat .chatTimer{
+  overflow: hidden;
+  float: right;
+  text-align: center;
+  margin: 0;
+  color: white;
+  font-weight: bold;
+  font-size: 1.5vh;
+  height: 2vh;
+  width: 6vh;
+  margin-right:0.25vh;
+  margin-top:0.25vh;
   font-family: "Arial";
 }
 
@@ -88,9 +124,20 @@ const selectChat = (chatId) => {
   background-color: black;
 }
 
-.chat.selected .chatName,
-.chat.selected .chatLastMessage {
+.chat.selected .chatName{
   color: black;
+}
+
+.chat.selected .chatLastMessage{
+  color: black;
+}
+
+.chat.selected .chatTimer{
+  color: black;
+}
+
+.chat.selected {
+  background-color: white;
 }
 
 #addChat {
