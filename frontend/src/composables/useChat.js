@@ -36,7 +36,9 @@ export function useChat() {
             if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
                 currentData.getDate() == data.getDate()){
-                date = data.getHours().toString() + ":" + data.getMinutes().toString();
+                date = data.getHours().toString() + ":";
+                if(data.getMinutes() < 10)date += "0" + data.getMinutes().toString();
+                else date += data.getMinutes().toString();
             }else if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
                 Math.abs(currentData.getDate() - data.getDate()) < 8){
@@ -102,6 +104,12 @@ export function useChat() {
 
             const chatIdx = chats.value.findIndex(c => c.id === chatId);
             if (chatIdx !== -1) {
+                let dateOrigin = new Date(data.createdAt);
+                dateOrigin.setUTCHours(dateOrigin.getHours());
+                let date = dateOrigin.getHours().toString() + ":";
+                if(dateOrigin.getMinutes() < 10)date += "0" + dateOrigin.getMinutes().toString();
+                else date += dateOrigin.getMinutes().toString();
+                chats.value[chatIdx].time = date;
                 chats.value[chatIdx].lastMessage = decryptedContent;
                 const [chat] = chats.value.splice(chatIdx, 1);
                 chats.value.unshift(chat);
