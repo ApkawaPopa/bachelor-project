@@ -31,6 +31,7 @@ import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerCo
 import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.Map;
 
 @Configuration
@@ -118,14 +119,19 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             System.out.println("Subscribe destination: " + destination);
 
-                            var topicChat = "/topic/chat/";
-                            if (destination.startsWith(topicChat)) {
-                                var received = "/received";
-                                if (destination.endsWith(received)) {
-                                    destination = destination.substring(0, destination.length() - received.length());
+                            var topicChatStr = "/topic/chat/";
+                            if (destination.startsWith(topicChatStr)) {
+                                for (var endingStr : List.of("/received", "/edited", "/deleted")) {
+                                    if (destination.endsWith(endingStr)) {
+                                        destination = destination.substring(
+                                            0,
+                                            destination.length() - endingStr.length()
+                                        );
+                                        break;
+                                    }
                                 }
 
-                                var chatIdStr = destination.substring(topicChat.length());
+                                var chatIdStr = destination.substring(topicChatStr.length());
                                 try {
                                     var chatId = Integer.parseInt(chatIdStr);
                                     if (!userChatRepository.existsByUserAndChat_Id(user, chatId)) {
@@ -153,11 +159,11 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             System.out.println("Message destination: " + destination);
 
-                            var appChat = "/app/chat/";
-                            if (!destination.startsWith(appChat)) {
+                            var appChatStr = "/app/chat/";
+                            if (!destination.startsWith(appChatStr)) {
                                 throw NotFoundException.stompDefault();
                             }
-                            destination = destination.substring(appChat.length());
+                            destination = destination.substring(appChatStr.length());
 
                             var messagePost = "/message/post";
                             var receive = "/receive";
