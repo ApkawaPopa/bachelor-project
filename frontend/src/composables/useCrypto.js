@@ -1,4 +1,3 @@
-// src/composables/useCrypto.js
 export function useCrypto() {
     // ---- Утилиты преобразования ----
     const arrayBufferToBase64 = (buffer) => {
@@ -186,6 +185,44 @@ export function useCrypto() {
         return arrayBufferToBase64(result);
     };
 
+    /**
+     * Шифрует файл (ArrayBuffer) с использованием AES-GCM.
+     * Формат: [версия 1 байт][IV 12 байт][шифрованные данные]
+     */
+    const encryptFile = async (fileBuffer, symmetricKey) => {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const version = new Uint8Array([0x01]);
+        const encrypted = await crypto.subtle.encrypt(
+            {name: 'AES-GCM', iv},
+            symmetricKey,
+            fileBuffer
+        );
+        const result = new Uint8Array(version.length + iv.length + encrypted.byteLength);
+        result.set(version);
+        result.set(iv, version.length);
+        result.set(new Uint8Array(encrypted), version.length + iv.length);
+        return result.buffer;
+    };
+
+    /**
+     * Расшифровывает файл (ArrayBuffer) с использованием AES-GCM.
+     * Формат: [версия 1 байт][IV 12 байт][шифрованные данные]
+     */
+    const decryptFile = async (encryptedBuffer, symmetricKey) => {
+        const data = new Uint8Array(encryptedBuffer);
+        const version = data[0];
+        if (version !== 1) {
+            throw new Error('Unsupported file encryption version');
+        }
+        const iv = data.slice(1, 13);
+        const ciphertext = data.slice(13);
+        return await crypto.subtle.decrypt(
+            {name: 'AES-GCM', iv},
+            symmetricKey,
+            ciphertext
+        );
+    };
+
     return {
         arrayBufferToBase64,
         base64ToArrayBuffer,
@@ -206,5 +243,7 @@ export function useCrypto() {
         decryptPrivateKeyWithPassword,
         decryptMessageContent,
         encryptMessageContent,
+        encryptFile,
+        decryptFile,
     };
 }

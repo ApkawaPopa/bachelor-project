@@ -45,6 +45,9 @@ public class Message {
     @OneToMany(mappedBy = "message")
     private List<MessageReceiver> receivers;
 
+    @OneToMany(mappedBy = "message")
+    private List<S3Object> s3Objects;
+
     public Message() {
     }
 
@@ -119,6 +122,14 @@ public class Message {
 
     public void setReceivers(List<MessageReceiver> receivers) {
         this.receivers = receivers;
+    }
+
+    public List<S3Object> getS3Objects() {
+        return s3Objects;
+    }
+
+    public void setS3Objects(List<S3Object> s3Objects) {
+        this.s3Objects = s3Objects;
     }
 
     @Override

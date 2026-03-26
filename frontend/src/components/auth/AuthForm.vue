@@ -14,8 +14,10 @@
 
     <form v-else id="reg" :class="errorClass" @submit.prevent="handleRegister">
       <input v-model="registerForm.username" placeholder="Логин" required/>
-      <input v-model="registerForm.password" placeholder="Пароль" required type="password" @input="checkPasswordsMatch"/>
-      <input v-model="registerForm.passwordConfirm" placeholder="Подтвердите пароль" required type="password" @input="checkPasswordsMatch"/>
+      <input v-model="registerForm.password" placeholder="Пароль" required type="password"
+             @input="checkPasswordsMatch"/>
+      <input v-model="registerForm.passwordConfirm" placeholder="Подтвердите пароль" required type="password"
+             @input="checkPasswordsMatch"/>
       <button :disabled="!passwordsMatch" class="inBut" type="submit">Зарегистрироваться</button>
     </form>
   </div>

@@ -87,7 +87,8 @@ const selectChat = (chatId) => {
   padding-left: 0.5vh;
   font-family: "Arial";
 }
-.chat .chatMessagesCount{
+
+.chat .chatMessagesCount {
   overflow: hidden;
   float: right;
   text-align: center;
@@ -97,15 +98,16 @@ const selectChat = (chatId) => {
   font-size: 2vh;
   height: 1.5vh;
   width: 3.25vh;
-  padding-top:0.5vh;
-  padding-bottom:1.25vh;
-  margin-right:0.25vh;
-  margin-top:0.25vh;
+  padding-top: 0.5vh;
+  padding-bottom: 1.25vh;
+  margin-right: 0.25vh;
+  margin-top: 0.25vh;
   font-family: "Arial";
   background-color: white;
   border-radius: 100%;
 }
-.chat .chatTimer{
+
+.chat .chatTimer {
   overflow: hidden;
   float: right;
   text-align: center;
@@ -115,8 +117,8 @@ const selectChat = (chatId) => {
   font-size: 1.5vh;
   height: 2vh;
   width: 6vh;
-  margin-right:0.25vh;
-  margin-top:0.25vh;
+  margin-right: 0.25vh;
+  margin-top: 0.25vh;
   font-family: "Arial";
 }
 
@@ -124,15 +126,15 @@ const selectChat = (chatId) => {
   background-color: black;
 }
 
-.chat.selected .chatName{
+.chat.selected .chatName {
   color: black;
 }
 
-.chat.selected .chatLastMessage{
+.chat.selected .chatLastMessage {
   color: black;
 }
 
-.chat.selected .chatTimer{
+.chat.selected .chatTimer {
   color: black;
 }
 

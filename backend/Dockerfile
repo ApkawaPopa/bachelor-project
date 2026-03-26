@@ -12,6 +12,9 @@ WORKDIR /app
 
 COPY --from=builder /app/target/*.jar app.jar
 
+COPY src/main/resources/minio/public.crt /tmp/minio.crt
+RUN keytool -import -trustcacerts -keystore $JAVA_HOME/lib/security/cacerts -storepass changeit -noprompt -alias minio -file /tmp/minio.crt
+
 EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

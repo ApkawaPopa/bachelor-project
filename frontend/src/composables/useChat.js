@@ -4,6 +4,7 @@ import SockJS from 'sockjs-client';
 import {useCrypto} from './useCrypto';
 import {useApi} from './useApi';
 import {useAuth} from './useAuth';
+import {useFileUpload} from './useFileUpload';
 
 export function useChat() {
     const {
@@ -13,6 +14,7 @@ export function useChat() {
     } = useCrypto();
     const {get, post} = useApi();
     const auth = useAuth();
+    const {uploadFile} = useFileUpload();
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const WS_URL = import.meta.env.VITE_WS_URL;
@@ -35,19 +37,19 @@ export function useChat() {
             let date = "";
             if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
-                currentData.getDate() == data.getDate()){
+                currentData.getDate() == data.getDate()) {
                 date = data.getHours().toString() + ":";
-                if(data.getMinutes() < 10)date += "0" + data.getMinutes().toString();
+                if (data.getMinutes() < 10) date += "0" + data.getMinutes().toString();
                 else date += data.getMinutes().toString();
-            }else if (currentData.getFullYear() == data.getFullYear() &&
+            } else if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
-                Math.abs(currentData.getDate() - data.getDate()) < 8){
+                Math.abs(currentData.getDate() - data.getDate()) < 8) {
                 const DayOfNedelya = new Array("пн", "вт", "ср", "чт", "пт", "сб", "вс")
                 date = DayOfNedelya[data.getDay() - 1];
-            }else if (currentData.getFullYear() == data.getFullYear()) {
+            } else if (currentData.getFullYear() == data.getFullYear()) {
                 const Month = new Array("янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек.")
                 date = data.getDate().toString() + " " + Month[data.getMonth()];
-            }else{
+            } else {
                 date = data.getDate().toString() + "." + data.getMonth().toString() + "." + data.getFullYear().toString()[2] + data.getFullYear().toString()[3];
             }
             const encryptedKey = base64ToArrayBuffer(item.encryptedSymmetricKey);
@@ -76,10 +78,22 @@ export function useChat() {
         const messages = [];
         for (const item of data.data) {
             const decryptedContent = await decryptMessageContent(item.content, chat.symmetricKey);
+            // Расшифровываем имена файлов
+            const fileKeysWithNames = [];
+            if (item.fileKeys && item.fileKeys.length) {
+                for (const fk of item.fileKeys) {
+                    const decryptedName = await decryptMessageContent(fk.filename, chat.symmetricKey);
+                    fileKeysWithNames.push({
+                        fileKey: fk.fileKey,
+                        filename: decryptedName
+                    });
+                }
+            }
             messages.push({
                 ...item,
                 content: decryptedContent,
                 receivers: item.receivers || [],
+                fileKeys: fileKeysWithNames
             });
         }
         chatMessages.value.set(chatId, messages);
@@ -91,10 +105,22 @@ export function useChat() {
         stompClient.value.subscribe(`/topic/chat/${chatId}`, async (message) => {
             const {data} = JSON.parse(message.body);
             const decryptedContent = await decryptMessageContent(data.content, symmetricKey);
+            // Расшифровываем имена файлов
+            const fileKeysWithNames = [];
+            if (data.fileKeys && data.fileKeys.length) {
+                for (const fk of data.fileKeys) {
+                    const decryptedName = await decryptMessageContent(fk.filename, symmetricKey);
+                    fileKeysWithNames.push({
+                        fileKey: fk.fileKey,
+                        filename: decryptedName
+                    });
+                }
+            }
             const newMessage = {
                 ...data,
                 content: decryptedContent,
                 receivers: data.receivers || [],
+                fileKeys: fileKeysWithNames
             };
             const messages = chatMessages.value.get(chatId);
             if (messages) {
@@ -107,7 +133,7 @@ export function useChat() {
                 let dateOrigin = new Date(data.createdAt);
                 dateOrigin.setUTCHours(dateOrigin.getHours());
                 let date = dateOrigin.getHours().toString() + ":";
-                if(dateOrigin.getMinutes() < 10)date += "0" + dateOrigin.getMinutes().toString();
+                if (dateOrigin.getMinutes() < 10) date += "0" + dateOrigin.getMinutes().toString();
                 else date += dateOrigin.getMinutes().toString();
                 chats.value[chatIdx].time = date;
                 chats.value[chatIdx].lastMessage = decryptedContent;
@@ -194,14 +220,29 @@ export function useChat() {
         stompClient.value.activate();
     };
 
-    const sendMessage = async (text) => {
+    const sendMessage = async (text, files = []) => {
         if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
         const chat = chats.value.find(c => c.id === activeChatId.value);
         if (!chat) return;
+
+        const fileKeys = [];
+        for (const fileItem of files) {
+            try {
+                const {key} = await uploadFile(fileItem.file, chat.symmetricKey);
+                fileKeys.push(key);
+            } catch (err) {
+                console.error('File upload failed', err);
+                throw err; // прерываем отправку
+            }
+        }
+
         const encryptedContent = await encryptMessageContent(text, chat.symmetricKey);
         stompClient.value.publish({
             destination: `/app/chat/${activeChatId.value}/message/post`,
-            body: JSON.stringify({content: encryptedContent}),
+            body: JSON.stringify({
+                content: encryptedContent,
+                fileKeys: fileKeys
+            })
         });
     };
 

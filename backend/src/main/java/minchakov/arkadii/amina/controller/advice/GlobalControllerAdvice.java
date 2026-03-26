@@ -71,7 +71,7 @@ public class GlobalControllerAdvice {
 
     @MessageExceptionHandler
     @SendToUser("/queue/error")
-    public StompResponse<Map<String, List<String>>> handleMessageValidationErrors(MethodArgumentNotValidException e) {
+    public StompResponse<Map<String, List<String>>> handleMessageValidationErrors(org.springframework.messaging.handler.annotation.support.MethodArgumentNotValidException e) {
         Map<String, List<String>> errors = e.getBindingResult().getFieldErrors().stream().collect(Collectors.groupingBy(
             FieldError::getField,
             Collectors.mapping(DefaultMessageSourceResolvable::getDefaultMessage, Collectors.toList())
@@ -94,6 +94,7 @@ public class GlobalControllerAdvice {
     @MessageExceptionHandler
     @SendToUser("/queue/error")
     public StompResponse<Void> handleMessageUnexpectedException(Exception e) {
+        System.out.println("What exception what: " + e.getClass());
         e.printStackTrace();
         return new StompResponse<>(500, "Internal server error: " + e.getMessage());
     }

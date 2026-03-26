@@ -13,13 +13,30 @@
         <div :class="{ isMe: message.sender === currentUser }" class="message-wrapper">
           <p v-if="message.sender !== currentUser" class="messageSender">{{ message.sender }}</p>
           <p class="messageContent">{{ message.content }}</p>
-          <p v-if="message.sender === currentUser" class="messageStatus">{{message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚')}}</p>
+          <!-- Блок вложений -->
+          <div v-if="message.fileKeys && message.fileKeys.length" class="message-attachments">
+            <div v-for="file in message.fileKeys" :key="file.fileKey" class="attachment"
+                 @click="downloadFile(file.fileKey, file.filename)">
+              📎 {{ file.filename }}
+            </div>
+          </div>
+          <p v-if="message.sender === currentUser" class="messageStatus">
+            {{ message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚') }}</p>
         </div>
       </li>
     </ul>
 
+    <div v-if="selectedFiles.length" id="file-attachments">
+      <div v-for="(file, idx) in selectedFiles" :key="idx" class="file-item">
+        <span>{{ file.name }} ({{ formatSize(file.size) }})</span>
+        <button @click="removeFile(idx)">❌</button>
+      </div>
+    </div>
+
     <form id="chatInput" @submit.prevent="handleSend">
       <input id="chatInputInputer" v-model="newMessage" placeholder="Сообщение" required/>
+      <input ref="fileInput" multiple style="display: none" type="file" @change="onFileSelect"/>
+      <button class="attach-button" type="button" @click="$refs.fileInput.click()">📎</button>
       <button id="chatInputSend" type="submit">▶</button>
     </form>
   </div>
@@ -27,21 +44,65 @@
 
 <script setup>
 import {ref} from 'vue';
+import {useFileDownload} from '@/composables/useFileDownload';
 
 const props = defineProps({
   messages: {type: Array, required: true},
   chatName: {type: String, default: ''},
   currentUser: {type: String, required: true},
+  activeChatId: {type: Number, required: true},
+  chatSymmetricKey: {type: Object, required: true}
 });
 const emit = defineEmits(['send-message', 'leave-chat']);
 
 const newMessage = ref('');
+const selectedFiles = ref([]);
+const fileInput = ref(null);
 
-const handleSend = () => {
-  if (newMessage.value.trim()) {
-    emit('send-message', newMessage.value);
-    newMessage.value = '';
+const {downloadAndDecrypt} = useFileDownload();
+
+const downloadFile = async (fileKey, filename) => {
+  try {
+    const blob = await downloadAndDecrypt(fileKey, props.chatSymmetricKey);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Failed to download file', err);
   }
+};
+
+const onFileSelect = (event) => {
+  const files = Array.from(event.target.files);
+  selectedFiles.value.push(...files.map(f => ({
+    file: f,
+    name: f.name,
+    size: f.size,
+    status: 'pending'
+  })));
+  fileInput.value.value = '';
+};
+
+const removeFile = (idx) => {
+  selectedFiles.value.splice(idx, 1);
+};
+
+const formatSize = (bytes) => {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+};
+
+const handleSend = async () => {
+  if (!newMessage.value.trim() && selectedFiles.value.length === 0) return;
+  emit('send-message', newMessage.value, selectedFiles.value);
+  newMessage.value = '';
+  selectedFiles.value = [];
 };
 </script>
 
@@ -188,5 +249,61 @@ const handleSend = () => {
   font-family: "Arial";
   color: black;
   cursor: pointer;
+}
+
+.message-attachments {
+  margin-top: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.attachment {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: background-color 0.2s;
+}
+
+.attachment:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+#file-attachments {
+  border-top: 1px solid #444;
+  padding: 8px;
+  background-color: #222;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.file-item {
+  background-color: #333;
+  border-radius: 4px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.file-item button {
+  background: none;
+  border: none;
+  color: #ff6b6b;
+  cursor: pointer;
+}
+
+.attach-button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  margin: 0 8px;
 }
 </style>

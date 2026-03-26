@@ -56,7 +56,9 @@ const handleCreateChat = async ({name, participants}) => {
     />
     <ChatWindow
         v-if="activeChatId !== -1"
+        :active-chat-id="activeChatId"
         :chat-name="chats.find(c => c.id === activeChatId)?.name"
+        :chat-symmetric-key="chats.find(c => c.id === activeChatId)?.symmetricKey"
         :current-user="username"
         :messages="activeMessages"
         @send-message="sendMessage"

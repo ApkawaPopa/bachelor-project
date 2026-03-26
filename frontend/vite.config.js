@@ -17,10 +17,21 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
-    server: {
-        https: {
-            pfx: fs.readFileSync(path.resolve(__dirname, 'localhost.pfx')),
-            passphrase: 'changeit'
-        },
-    }
+  server: {
+    watch: {
+      usePolling: true,
+    },
+    https: {
+      pfx: fs.readFileSync(path.resolve(__dirname, 'localhost.pfx')),
+      passphrase: 'changeit'
+    },
+    proxy: {
+      '/api': {
+        target: 'https://backend:8080',
+        changeOrigin: true,
+        secure: false,
+        ws: true
+      },
+    },
+  }
 })

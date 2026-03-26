@@ -5,31 +5,31 @@ import java.util.Objects;
 
 public class UserChatId implements Serializable {
 
-    private User user;
+    private Integer user;
 
-    private Chat chat;
+    private Integer chat;
 
     public UserChatId() {
     }
 
-    public UserChatId(User user, Chat chat) {
+    public UserChatId(Integer user, Integer chat) {
         this.user = user;
         this.chat = chat;
     }
 
-    public User getUser() {
+    public Integer getUser() {
         return user;
     }
 
-    public void setUser(User user) {
+    public void setUser(Integer user) {
         this.user = user;
     }
 
-    public Chat getChat() {
+    public Integer getChat() {
         return chat;
     }
 
-    public void setChat(Chat chat) {
+    public void setChat(Integer chat) {
         this.chat = chat;
     }
 

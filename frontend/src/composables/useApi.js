@@ -1,4 +1,3 @@
-// src/composables/useApi.js
 import {useStorage} from './useStorage';
 
 export function useApi() {

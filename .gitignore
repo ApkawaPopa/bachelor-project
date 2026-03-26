@@ -9,6 +9,9 @@
 
 backend/target
 
+**/*.key
 **/*.crt
 **/*.pfx
 **/*.p12
+
+**/*.license

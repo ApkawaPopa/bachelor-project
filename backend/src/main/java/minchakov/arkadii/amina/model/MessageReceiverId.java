@@ -5,31 +5,31 @@ import java.util.Objects;
 
 public class MessageReceiverId implements Serializable {
 
-    private Message message;
+    private Integer message;
 
-    private User receiver;
+    private Integer receiver;
 
     public MessageReceiverId() {
     }
 
-    public MessageReceiverId(Message message, User receiver) {
+    public MessageReceiverId(Integer message, Integer receiver) {
         this.message = message;
         this.receiver = receiver;
     }
 
-    public Message getMessage() {
+    public Integer getMessage() {
         return message;
     }
 
-    public void setMessage(Message message) {
+    public void setMessage(Integer message) {
         this.message = message;
     }
 
-    public User getReceiver() {
+    public Integer getReceiver() {
         return receiver;
     }
 
-    public void setReceiver(User receiver) {
+    public void setReceiver(Integer receiver) {
         this.receiver = receiver;
     }
 

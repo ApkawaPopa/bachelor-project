@@ -11,7 +11,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
       - ./backend/src/main/resources/db-init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
-      - backend
+      - amina
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
@@ -26,6 +26,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -35,12 +37,77 @@ services:
       LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
       KEYSTORE_PASSWORD: ${BACKEND_CERTIFICATE_PASSWORD}
       JWT_SECRET: ${BACKEND_JWT_SECRET}
+      S3_INTERNAL_URL: https://minio-s3:9000
+      S3_EXTERNAL_URL: https://${S3_ADDRESS}:${S3_SERVER_PORT}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
     networks:
-      - backend
-#    restart: unless-stopped
+      - amina
+    healthcheck:
+      test: [ "CMD-SHELL", "wget --no-check-certificate --spider --quiet https://localhost:8080 2>&1 | grep HTTP/" ]
+      interval: 5s
+      timeout: 4s
+      retries: 10
+
+  minio-s3:
+    image: quay.io/minio/aistor/minio
+    ports:
+      - "${S3_ADDRESS}:${S3_SERVER_PORT}:9000"
+      - "${S3_ADDRESS}:${S3_CONSOLE_PORT}:9001"
+    volumes:
+      - minio-data:/amina
+      - ./backend/src/main/resources/minio/minio.license:/minio.license
+      - ./backend/src/main/resources/minio/private.key:/certs/private.key
+      - ./backend/src/main/resources/minio/public.crt:/certs/public.crt
+    environment:
+      MINIO_ROOT_USER: ${S3_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
+    command: minio server /amina --license /minio.license --console-address ":9001" --certs-dir /certs
+    networks:
+      - amina
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "-k", "-I", "https://localhost:9000/minio/health/live" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio-init:
+    image: quay.io/minio/aistor/mc
+    networks:
+      - amina
+    depends_on:
+      minio-s3:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${S3_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
+      S3_INTERNAL_URL: https://minio-s3:9000
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+      S3_BUCKET: ${S3_BUCKET}
+    volumes:
+      - ./backend/src/main/resources/minio/init-minio.sh:/init-minio.sh
+    entrypoint: [ "/bin/sh", "/init-minio.sh" ]
+    restart: "no"
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3125:3125"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - amina
+    command: npm run dev
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres-data:
+  minio-data:
 
 networks:
-  backend:
+  amina:

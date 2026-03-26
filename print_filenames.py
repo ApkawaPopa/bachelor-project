@@ -4,7 +4,7 @@ import os
 def print_filenames(directory):
     for root, _, files in os.walk(directory):
         for file_name in files:
-            print(f"    '{root}\\{file_name}': 1,".replace('\\', '\\\\'))
+            print(f"    r'{root}\\{file_name}',")
 
 
 if __name__ == '__main__':
