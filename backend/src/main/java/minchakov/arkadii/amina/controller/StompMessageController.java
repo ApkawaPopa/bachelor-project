@@ -170,7 +170,10 @@ public class StompMessageController {
         @DestinationVariable("chatId") int chatId,
         @DestinationVariable("messageId") int messageId
     ) {
-        var keys = s3ObjectRepository.findByMessage_Id(messageId).stream().map(S3Object::getId).toList();
+        var message = messageRepository.findById(messageId)
+                                       .orElseThrow(() -> new InternalServerErrorException(
+                                           "Message not found while deleting message"));
+        var keys = message.getS3Objects().stream().map(S3Object::getId).toList();
         messageRepository.deleteById(messageId);
         for (var key : keys) {
             s3Service.deleteObject(key);

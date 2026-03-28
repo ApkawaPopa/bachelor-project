@@ -1,5 +1,6 @@
 package minchakov.arkadii.amina.model;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -45,7 +46,7 @@ public class Message {
     @OneToMany(mappedBy = "message")
     private List<MessageReceiver> receivers;
 
-    @OneToMany(mappedBy = "message")
+    @OneToMany(mappedBy = "message", cascade = CascadeType.REMOVE)
     private List<S3Object> s3Objects;
 
     public Message() {

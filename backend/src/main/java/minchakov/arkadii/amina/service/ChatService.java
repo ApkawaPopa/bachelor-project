@@ -2,6 +2,7 @@ package minchakov.arkadii.amina.service;
 
 import minchakov.arkadii.amina.dto.ChatCreateDTO;
 import minchakov.arkadii.amina.dto.ChatCreationEvent;
+import minchakov.arkadii.amina.dto.ChatDeletionEvent;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
@@ -94,6 +95,33 @@ public class ChatService {
             var requestedChat = requestedChatOpt.get();
             if (userChatRepository.existsByUserAndChat(currentUser, requestedChat)) {
                 return requestedChat.getChatUsers();
+            }
+        }
+
+        throw new AccessDeniedException("You don't have access to this chat");
+    }
+
+    public Integer deleteChat(int chatId, User currentUser) {
+        currentUser = userRepository.findById(currentUser.getId()).orElse(null);
+        if (currentUser == null) {
+            throw new InternalServerErrorException("Current logged-in user not found in repository");
+        }
+
+        var requestedChatOpt = chatRepository.findById(chatId);
+        if (requestedChatOpt.isPresent()) {
+            var requestedChat = requestedChatOpt.get();
+            if (userChatRepository.existsByUserAndChat(currentUser, requestedChat)) {
+                applicationEventPublisher.publishEvent(new ChatDeletionEvent(
+                    chatId,
+                    requestedChat
+                        .getChatUsers()
+                        .stream()
+                        .map(UserChat::getUser)
+                        .map(User::getId)
+                        .toList()
+                ));
+                chatRepository.delete(requestedChat);
+                return chatId;
             }
         }
 

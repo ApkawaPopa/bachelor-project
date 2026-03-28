@@ -1,6 +1,11 @@
 package minchakov.arkadii.amina.util;
 
-import minchakov.arkadii.amina.dto.*;
+import minchakov.arkadii.amina.dto.AddChatDTO;
+import minchakov.arkadii.amina.dto.ChatCreationEvent;
+import minchakov.arkadii.amina.dto.ChatDeletionEvent;
+import minchakov.arkadii.amina.dto.ChatMessageEvent;
+import minchakov.arkadii.amina.dto.StompResponse;
+import minchakov.arkadii.amina.dto.UnreadMessagesCountDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
@@ -35,15 +40,35 @@ public class ChatEventPublisher {
         var chat = chatRepository.findById(event.chatId())
                                  .orElseThrow(() -> new InternalServerErrorException(
                                      "Chat not found by id after creation"));
-        for (var chatUser : chat.getChatUsers()) {
+        var chatUsers = chat.getChatUsers();
+        var userCount = chatUsers.size();
+        for (var chatUser : chatUsers) {
             var user = chatUser.getUser();
             var stompResponse = StompResponse.success(new AddChatDTO(
                 chat.getId(),
                 chat.getName(),
-                chatUser.getEncryptedSymmetricKey()
+                chatUser.getEncryptedSymmetricKey(),
+                chat.getCreatedAt(),
+                userCount
             ));
             System.out.println(user.getUsername());
-            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat", stompResponse);
+            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat/created", stompResponse);
+        }
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void sendChatDeletionEvent(ChatDeletionEvent event) {
+        var chatUsers = event
+            .userIds()
+            .stream()
+            .map(id -> userRepository
+                .findById(id)
+                .orElseThrow(() -> new InternalServerErrorException("User with id" + id + " not found after deletion")))
+            .toList();
+        for (var user : chatUsers) {
+            var stompResponse = StompResponse.success(event.chatId());
+            System.out.println(user.getUsername());
+            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat/deleted", stompResponse);
         }
     }
 

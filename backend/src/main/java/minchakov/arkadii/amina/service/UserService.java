@@ -47,6 +47,7 @@ public class UserService extends CrudServiceImpl<User, Integer> {
 
         return userChats.stream().map(userChat -> {
             var chat = userChat.getChat();
+            var userCount = chat.getChatUsers().size();
 
             var lastMessage = messageRepository.findFirstByChatOrderByCreatedAtDesc(chat);
 
@@ -70,7 +71,8 @@ public class UserService extends CrudServiceImpl<User, Integer> {
                 messageContent,
                 messageCreatedAt,
                 sortingDate,
-                getUnreadMessagesCount(chat, user)
+                getUnreadMessagesCount(chat, user),
+                userCount
             );
         }).sorted(Comparator.comparing(ListUserChatsChatDTO::sortingDate).reversed()).toList();
     }

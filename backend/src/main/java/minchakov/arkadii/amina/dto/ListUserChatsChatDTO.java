@@ -8,6 +8,7 @@ public record ListUserChatsChatDTO(
     String messageContent,
     LocalDateTime messageCreatedAt,
     LocalDateTime sortingDate,
-    int unreadMessagesCount
+    int unreadMessagesCount,
+    int userCount
 ) {
 }

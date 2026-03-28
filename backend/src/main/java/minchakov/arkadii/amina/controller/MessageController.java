@@ -24,6 +24,6 @@ public class MessageController {
 
     @GetMapping
     public RestResponse<List<GetMessageDTO>> list(@PathVariable int chatId, @AuthenticationPrincipal User user) {
-        return new RestResponse<>(200, "Success", messageService.listMessages(chatId, user));
+        return RestResponse.success(messageService.listMessages(chatId, user));
     }
 }

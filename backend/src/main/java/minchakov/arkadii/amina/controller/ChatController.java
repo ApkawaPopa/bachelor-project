@@ -10,6 +10,7 @@ import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.model.UserChat;
 import minchakov.arkadii.amina.service.ChatService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -51,6 +52,11 @@ public class ChatController {
 
         var dto = new ReadChatDTO(requestedChat.getName(), messages);
         return RestResponse.success(dto);
+    }
+
+    @DeleteMapping("/{id}")
+    public RestResponse<Integer> delete(@PathVariable int id, @AuthenticationPrincipal User currentUser) {
+        return RestResponse.success(chatService.deleteChat(id, currentUser));
     }
 
     @GetMapping("/{id}/users")
