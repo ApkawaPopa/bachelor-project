@@ -5,6 +5,7 @@ import {useCrypto} from './useCrypto';
 import {useApi} from './useApi';
 import {useAuth} from './useAuth';
 import {useFileUpload} from './useFileUpload';
+import {useFileDownload} from "@/composables/useFileDownload.js";
 
 export function useChat() {
     const {
@@ -15,6 +16,7 @@ export function useChat() {
     const {get, post} = useApi();
     const auth = useAuth();
     const {uploadFile} = useFileUpload();
+    const {downloadAndDecrypt} = useFileDownload();
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const WS_URL = import.meta.env.VITE_WS_URL;
@@ -27,29 +29,38 @@ export function useChat() {
 
     const activeMessages = computed(() => chatMessages.value.get(activeChatId.value) || []);
 
+    function getTextDate(data){
+        if(data.getHours()>=7)data.setUTCHours(data.getHours());
+        else data.setUTCHours(data.getHours()+24);
+        let date = data.getHours().toString() + ":";
+        if(data.getHours() < 10)date = "0" + date;
+        if(data.getMinutes() < 10)date += "0" + data.getMinutes().toString();
+        else date += data.getMinutes().toString();
+        return date
+    }
+
     const loadChats = async () => {
         const data = await get('/api/v1/user/chats');
         const loadedChats = [];
         for (const item of data.data) {
             const data = new Date(item.sortingDate);
-            data.setUTCHours(data.getHours());
+            if(data.getHours()>=7)data.setUTCHours(data.getHours());
+            else data.setUTCHours(data.getHours()+24);
             const currentData = new Date();
             let date = "";
             if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
-                currentData.getDate() == data.getDate()) {
-                date = data.getHours().toString() + ":";
-                if (data.getMinutes() < 10) date += "0" + data.getMinutes().toString();
-                else date += data.getMinutes().toString();
-            } else if (currentData.getFullYear() == data.getFullYear() &&
+                currentData.getDate() == data.getDate()){
+                date = getTextDate(new Date(item.sortingDate))
+            }else if (currentData.getFullYear() == data.getFullYear() &&
                 currentData.getMonth() == data.getMonth() &&
-                Math.abs(currentData.getDate() - data.getDate()) < 8) {
+                Math.abs(currentData.getDate() - data.getDate()) < 8){
                 const DayOfNedelya = new Array("пн", "вт", "ср", "чт", "пт", "сб", "вс")
                 date = DayOfNedelya[data.getDay() - 1];
-            } else if (currentData.getFullYear() == data.getFullYear()) {
+            }else if (currentData.getFullYear() == data.getFullYear()) {
                 const Month = new Array("янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек.")
                 date = data.getDate().toString() + " " + Month[data.getMonth()];
-            } else {
+            }else{
                 date = data.getDate().toString() + "." + data.getMonth().toString() + "." + data.getFullYear().toString()[2] + data.getFullYear().toString()[3];
             }
             const encryptedKey = base64ToArrayBuffer(item.encryptedSymmetricKey);
@@ -65,7 +76,9 @@ export function useChat() {
                 lastMessage,
                 symmetricKey,
                 time: date,
+                createdAt: getTextDate(new Date(item.sortingDate)),
                 unreadMessages: item.unreadMessagesCount,
+                userCount: item.userCount
             });
         }
         chats.value = loadedChats;
@@ -78,22 +91,39 @@ export function useChat() {
         const messages = [];
         for (const item of data.data) {
             const decryptedContent = await decryptMessageContent(item.content, chat.symmetricKey);
-            // Расшифровываем имена файлов
+
+            let date = getTextDate(new Date(item.createdAt))
+
             const fileKeysWithNames = [];
+            const imgs = [];
             if (item.fileKeys && item.fileKeys.length) {
                 for (const fk of item.fileKeys) {
-                    const decryptedName = await decryptMessageContent(fk.filename, chat.symmetricKey);
-                    fileKeysWithNames.push({
-                        fileKey: fk.fileKey,
-                        filename: decryptedName
-                    });
+                    try {
+                        const decryptedName = await decryptMessageContent(fk.filename, chat.symmetricKey);
+                        if (decryptedName.endsWith(".jpg") || decryptedName.endsWith(".png")) {
+                            const blob = await downloadAndDecrypt(fk.fileKey, chat.symmetricKey);
+                            const url = URL.createObjectURL(blob);
+                            imgs.push({
+                                url: url
+                            });
+                        } else {
+                            fileKeysWithNames.push({
+                                fileKey: fk.fileKey,
+                                filename: decryptedName
+                            });
+                        }
+                    }catch(err){
+                        console.log("Catch error while loading chat[" + chatId.toString() + "], message[" + item.id.toString() + "] with content:" + decryptedContent, err)
+                    }
                 }
             }
             messages.push({
                 ...item,
                 content: decryptedContent,
                 receivers: item.receivers || [],
-                fileKeys: fileKeysWithNames
+                fileKeys: fileKeysWithNames,
+                images: imgs,
+                time: date,
             });
         }
         chatMessages.value.set(chatId, messages);
@@ -105,23 +135,37 @@ export function useChat() {
         stompClient.value.subscribe(`/topic/chat/${chatId}`, async (message) => {
             const {data} = JSON.parse(message.body);
             const decryptedContent = await decryptMessageContent(data.content, symmetricKey);
-            // Расшифровываем имена файлов
+
+            const date = getTextDate(new Date(data.createdAt));
+
             const fileKeysWithNames = [];
+            const imgs = [];
             if (data.fileKeys && data.fileKeys.length) {
                 for (const fk of data.fileKeys) {
                     const decryptedName = await decryptMessageContent(fk.filename, symmetricKey);
-                    fileKeysWithNames.push({
-                        fileKey: fk.fileKey,
-                        filename: decryptedName
-                    });
+                    if(decryptedName.endsWith(".jpg")||decryptedName.endsWith(".png")) {
+                        const blob = await downloadAndDecrypt(fk.fileKey, symmetricKey);
+                        const url = URL.createObjectURL(blob);
+                        imgs.push({
+                            url: url
+                        });
+                    }else{
+                        fileKeysWithNames.push({
+                            fileKey: fk.fileKey,
+                            filename: decryptedName
+                        });
+                    }
                 }
             }
             const newMessage = {
                 ...data,
                 content: decryptedContent,
                 receivers: data.receivers || [],
-                fileKeys: fileKeysWithNames
+                fileKeys: fileKeysWithNames,
+                images: imgs,
+                time: date,
             };
+
             const messages = chatMessages.value.get(chatId);
             if (messages) {
                 messages.push(newMessage);
@@ -130,11 +174,7 @@ export function useChat() {
 
             const chatIdx = chats.value.findIndex(c => c.id === chatId);
             if (chatIdx !== -1) {
-                let dateOrigin = new Date(data.createdAt);
-                dateOrigin.setUTCHours(dateOrigin.getHours());
-                let date = dateOrigin.getHours().toString() + ":";
-                if (dateOrigin.getMinutes() < 10) date += "0" + dateOrigin.getMinutes().toString();
-                else date += dateOrigin.getMinutes().toString();
+                let date = getTextDate(new Date(data.createdAt));
                 chats.value[chatIdx].time = date;
                 chats.value[chatIdx].lastMessage = decryptedContent;
                 const [chat] = chats.value.splice(chatIdx, 1);
@@ -159,9 +199,41 @@ export function useChat() {
             }
         });
 
+        stompClient.value.subscribe(`/topic/chat/${chatId}/deleted`, (message) => {
+            const {data} = JSON.parse(message.body);
+            const messages = chatMessages.value.get(chatId);
+            if (!messages) return;
+            const messag = messages.findIndex(c => c.id === data)
+            if (messag===null) return;
+            messages.splice(messag, 1)
+            const chat = chats.value.find(c => c.id === chatId)
+            if(messag == messages.length){
+                if(messag == 0){
+                    chat.lastMessage = ""
+                    chat.time = chat.createdAt
+                }else{
+                    chat.lastMessage = messages[messag-1].content
+                    chat.time = messages[messag-1].time
+                }
+            }
+        });
+
+        stompClient.value.subscribe(`/topic/chat/${chatId}/edited`, async (message) => {
+            const {data} = JSON.parse(message.body);
+            const chat = chats.value.find(c => c.id === chatId);
+            if (!chat) return;
+            const decryptContent = await decryptMessageContent(data.content, chat.symmetricKey);
+            const messages = chatMessages.value.get(chatId);
+            if (!messages) return;
+            const messag = messages.find(c => c.id === data.id)
+            if (!messag) return;
+            const messagInd = messages.findIndex(c => c == messag)
+            if(messagInd == messages.length - 1)chat.lastMessage = decryptContent
+            messag.content = decryptContent
+        });
+
         stompClient.value.subscribe(`/user/queue/unread`, (unread) => {
             const {data} = JSON.parse(unread.body);
-            console.log(data);
             const chat = chats.value[chats.value.findIndex(c => c.id == data.chatId)];
             if (chat) {
                 chat.unreadMessages = data.unreadMessagesCount;
@@ -185,7 +257,7 @@ export function useChat() {
 
             stompClient.value.subscribe('/user/queue/error', (msg) => console.error('STOMP error', msg.body));
 
-            stompClient.value.subscribe('/user/queue/chat', async (message) => {
+            stompClient.value.subscribe('/user/queue/chat/created', async (message) => {
                 const {data} = JSON.parse(message.body);
                 const encryptedKey = base64ToArrayBuffer(data.encryptedSymmetricKey);
                 const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
@@ -195,6 +267,9 @@ export function useChat() {
                     name: data.name,
                     lastMessage: '',
                     symmetricKey,
+                    time: getTextDate(new Date(data.createdAt)),
+                    createdAt: getTextDate(new Date(data.createdAt)),
+                    userCount: data.userCount
                 };
                 chats.value.unshift(newChat);
                 chatMessages.value.set(data.id, []);
@@ -243,6 +318,25 @@ export function useChat() {
                 content: encryptedContent,
                 fileKeys: fileKeys
             })
+        });
+    };
+
+    const deleteMessage = (id) => {
+        if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
+        stompClient.value.publish({
+            destination: `/app/chat/${activeChatId.value}/message/${id}/delete`,
+            body: "",
+        });
+    };
+
+    const editMessage = async (id, newContent) => {
+        if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
+        const chat = chats.value.find(c => c.id === activeChatId.value);
+        if (!chat) return;
+        const encryptedNewContent = await encryptMessageContent(newContent, chat.symmetricKey);
+        stompClient.value.publish({
+            destination: `/app/chat/${activeChatId.value}/message/${id}/edit`,
+            body: JSON.stringify({content: encryptedNewContent}),
         });
     };
 
@@ -300,6 +394,8 @@ export function useChat() {
         loadChats,
         selectChat,
         sendMessage,
+        deleteMessage,
+        editMessage,
         createChat,
         connect,
     };

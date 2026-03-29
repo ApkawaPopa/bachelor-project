@@ -12,7 +12,7 @@
           <p class="defText">Список пользователей:</p>
         </div>
         <div v-for="user in participants" :key="user.username" class="addUserToGroupBottom">
-          <button class="addUsername" @click="removeParticipant(user)">{{ user.username }}</button>
+          <button @click="removeParticipant(user)" class="addUsername">{{ user.username }}</button>
           <button @click="removeParticipant(user)">X</button>
         </div>
         <button v-if="participants.length > 0" class="inBut" type="submit">Создать группу</button>
@@ -144,7 +144,7 @@ const createGroupChat = () => {
   font-weight: bold;
   font-family: "Arial";
   border: 1px solid white;
-  border-left: 0px;
+  border-left:0px;
   color: white;
   background-color: black;
   cursor: pointer;
@@ -162,7 +162,7 @@ const createGroupChat = () => {
   color: white;
   font-weight: bold;
   font-family: "Arial";
-  border: 1px solid white;
+  border:1px solid white;
   border-left: 0px;
   cursor: pointer;
 }
@@ -173,7 +173,7 @@ const createGroupChat = () => {
 }
 
 .defText {
-  padding-top: calc(100% / 6);
+  padding-top:calc(100%/6);
   margin: 0;
   text-align: center;
   font-weight: bold;

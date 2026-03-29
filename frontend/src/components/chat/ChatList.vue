@@ -3,7 +3,7 @@
     <div
         v-for="chat in chats"
         :key="chat.id"
-        :class="{ selected: activeChatId === chat.id }"
+        :class="{selected: activeChatId === chat.id}"
         class="chat"
         @click="selectChat(chat.id)"
     >

@@ -1,61 +1,90 @@
 <template>
+  <div id="messageMenu" v-if="menu.visible" :style="{top:menu.y, left:menu.x, 'border-radius':menu.radius}">
+    <button id="deleteMessage" @click.stop="handleDelete">Удалить</button>
+    <button id="editMessage" @click.stop="handleEdit">Изменить</button>
+  </div>
   <div id="chatChatting">
     <div id="chatHeader">
-      <button id="chatHeaderLeave" @click="$emit('leave-chat')">🡨</button>
-      <p id="chatHeaderName">{{ chatName }}</p>
+      <button id="chatHeaderLeave" @click.stop="$emit('leave-chat')">🡨</button>
+      <div id="chatHeaderController" @click="$emit('open-chat-menu')">
+        <p id="chatHeaderName">{{ chatName }}</p>
+        <p id="chatHeaderUserCounter">{{ userCount }} участников</p>
+      </div>
     </div>
-
-    <ul class="messages">
+    <ul class="messages" :style="{height:isEditing ? 'calc(95vh - 5.5vh - 2px - 5vh - 1px)':'calc(95vh - 5.5vh - 2px)'}">
       <li v-for="message in messages"
           :key="message.id"
           :class="{ messageUs: message.sender === currentUser }"
-          class="message">
+          class="message"
+          @click.stop="showMenu(message, message.sender === currentUser)">
         <div :class="{ isMe: message.sender === currentUser }" class="message-wrapper">
           <p v-if="message.sender !== currentUser" class="messageSender">{{ message.sender }}</p>
-          <p class="messageContent">{{ message.content }}</p>
-          <!-- Блок вложений -->
+          <div class="messageImages" v-if="message.images && message.images.length">
+            <img class="messageImagesImage" v-for="image in message.images" :src="image.url">
+          </div>
+          <p class="messageContent">
+            {{ message.content }}
+          </p>
           <div v-if="message.fileKeys && message.fileKeys.length" class="message-attachments">
             <div v-for="file in message.fileKeys" :key="file.fileKey" class="attachment"
-                 @click="downloadFile(file.fileKey, file.filename)">
-              📎 {{ file.filename }}
+                 @click="downloadFile(file.fileKey, file.filename)">📄 {{ file.filename }}
             </div>
           </div>
-          <p v-if="message.sender === currentUser" class="messageStatus">
-            {{ message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚') }}</p>
+          <div class="messageInfo">
+            <p v-if="message.sender === currentUser" class="messageStatus">
+              {{message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚')}}
+            </p>
+            <p class="messageTime">
+              {{message.time}}
+            </p>
+          </div>
         </div>
       </li>
     </ul>
 
+    <div v-if="isEditing" id="chatEdit">
+      <p id="chatEditHeader">Редактирование</p>
+      <button id="chatEditCancel" @click="cancelEdit">✖</button>
+    </div>
+
     <div v-if="selectedFiles.length" id="file-attachments">
       <div v-for="(file, idx) in selectedFiles" :key="idx" class="file-item">
-        <span>{{ file.name }} ({{ formatSize(file.size) }})</span>
-        <button @click="removeFile(idx)">❌</button>
+        <span>{{ file.name }}<br>{{ formatSize(file.size) }}</span>
+        <button @click="removeFile(idx)">✖</button>
       </div>
     </div>
 
     <form id="chatInput" @submit.prevent="handleSend">
-      <input id="chatInputInputer" v-model="newMessage" placeholder="Сообщение" required/>
-      <input ref="fileInput" multiple style="display: none" type="file" @change="onFileSelect"/>
-      <button class="attach-button" type="button" @click="$refs.fileInput.click()">📎</button>
-      <button id="chatInputSend" type="submit">▶</button>
+      <input ref="fileInput" multiple style="display: none" type="file" @change="onFileSelect" autocomplete="off"/>
+      <input id="chatInputInputer" v-model="newMessage" placeholder="Сообщение" autocomplete="off"/>
+      <button id="chatInputAttach" type="button" @click="!isEditing ? $refs.fileInput.click() : ''">🧷</button>
+      <button id="chatInputSend" type="submit">💬</button>
     </form>
   </div>
 </template>
 
 <script setup>
-import {ref} from 'vue';
+import {reactive, ref} from 'vue';
 import {useFileDownload} from '@/composables/useFileDownload';
 
 const props = defineProps({
   messages: {type: Array, required: true},
   chatName: {type: String, default: ''},
   currentUser: {type: String, required: true},
+  userCount: {type: Number, default: 0},
   activeChatId: {type: Number, required: true},
   chatSymmetricKey: {type: Object, required: true}
 });
-const emit = defineEmits(['send-message', 'leave-chat']);
+
+const emit = defineEmits(['send-message', 'delete-message', 'edit-message', 'leave-chat', 'open-chat-menu']);
 
 const newMessage = ref('');
+const isEditing = ref(false);
+
+const handleEdit = () => {
+  isEditing.value = true;
+  newMessage.value = menu.message.content;
+}
 const selectedFiles = ref([]);
 const fileInput = ref(null);
 
@@ -85,7 +114,7 @@ const onFileSelect = (event) => {
     size: f.size,
     status: 'pending'
   })));
-  fileInput.value.value = '';
+  fileInput.value = '';
 };
 
 const removeFile = (idx) => {
@@ -98,15 +127,83 @@ const formatSize = (bytes) => {
   return (bytes / 1048576).toFixed(1) + ' MB';
 };
 
-const handleSend = async () => {
+const handleSend = () => {
   if (!newMessage.value.trim() && selectedFiles.value.length === 0) return;
-  emit('send-message', newMessage.value, selectedFiles.value);
+  if(isEditing.value){
+    if(newMessage.value !== menu.message.content)emit('edit-message', menu.message.id, newMessage.value);
+  }else{
+    emit('send-message', newMessage.value, selectedFiles.value);
+  }
   newMessage.value = '';
+  isEditing.value = false;
   selectedFiles.value = [];
 };
+
+const cancelEdit = () => {
+  newMessage.value = '';
+  isEditing.value = false;
+}
+
+const handleDelete = () => {
+  menu.visible = false
+  emit('delete-message', menu.message.id)
+}
+
+const menu = reactive({
+  visible: false,
+  x: "",
+  y: "",
+  style: "",
+  message: {},
+  radius: ""
+})
+
+const showMenu = (message, isMe) => {
+  if(!isMe)return;
+  const target = event.target.closest(".message")
+  const position = target.children[0].getBoundingClientRect()
+  menu.visible = true
+  if(isMe){
+    menu.x = "calc(" + String(position.x - 5 - 2) + "px - 10vw)"
+    menu.radius = "12px 0 12px 12px"
+  }else{
+    menu.x = String(position.x + position.width + 5) + "px"
+    menu.radius = "0 12px 12px 12px"
+  }
+  if(position.height > window.innerHeight){
+    if(position.height - Math.abs(position.y) > window.innerHeight) menu.y = String(window.innerHeight / 2) + "px"
+    else menu.y = String((position.height + position.y) / 2) + "px"
+  }
+  else menu.y = String(position.y + position.height / 2) + "px"
+  menu.message = message
+}
+
+document.addEventListener("click", () => {
+  menu.visible = false
+})
 </script>
 
 <style scoped>
+#messageMenu{
+  position:absolute;
+  border:1px solid white;
+  width:10vw;
+  background-color: black;
+}
+
+#deleteMessage, #editMessage{
+  width:100%;
+  height:5vh;
+  border:0px;
+  padding:0px;
+  color:white;
+  background-color:rgba(0,0,0,0);
+  font-weight: bold;
+  font-size: 2vh;
+  font-family: "Arial";
+  cursor: pointer;
+}
+
 #chatChatting {
   margin-left: 25vw;
   width: 75vw;
@@ -133,22 +230,38 @@ const handleSend = async () => {
   cursor: pointer;
 }
 
-#chatHeaderName {
+#chatHeaderController{
   float: right;
-  margin: 0;
   width: calc(74vw - 5vh);
-  margin-top: 1vh;
-  height: 4vh;
+  height: 5vh;
+}
+
+#chatHeaderName {
+  height: 2.5vh;
+  margin: 0;
+  margin-top: 0.25vh;
   color: white;
   font-weight: bold;
-  font-size: 3vh;
+  font-size: 2.25vh;
   font-family: "Arial";
+  text-align: center;
+}
+
+#chatHeaderUserCounter {
+  height: 1.5vh;
+  margin: 0;
+  width: calc(74vw - 5vh);
+  margin-top: 0.75vh;
+  color: white;
+  font-weight: bold;
+  font-size: 1.25vh;
+  font-family: "Arial";
+  text-align: center;
 }
 
 .messages {
   margin: 0;
-  padding: 0 1vw;
-  height: calc(90vh - 2px);
+  padding: 0.5vh 1vw 0 1vw;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -183,12 +296,26 @@ const handleSend = async () => {
   border: 1px solid white;
 }
 
+.messageInfo {
+  display: inline-flex;
+  flex-direction: row-reverse;
+}
+
 .isMe {
   border-radius: 12px 12px 0 12px;
 }
 
+.messageImages {
+  max-width: 60vw;
+}
+
+.messageImagesImage{
+  border-radius:6px;
+  max-width: 60vw;
+}
+
 .messageSender {
-  color: grey;
+  color: white;
   padding-bottom: 2px;
 }
 
@@ -198,7 +325,14 @@ const handleSend = async () => {
 
 .messageStatus {
   text-align: left;
+  color:white;
   margin: 0;
+}
+
+.messageTime {
+  text-align: right;
+  color:white;
+  margin:0;
 }
 
 .messageSender, .messageContent {
@@ -209,6 +343,8 @@ const handleSend = async () => {
   word-break: break-word;
   overflow-wrap: break-word;
   hyphens: auto;
+  font-weight: bold;
+  font-family: "Arial";
 }
 
 #chatInput {
@@ -223,7 +359,7 @@ const handleSend = async () => {
   height: 100%;
   padding: 0 0 0 1vw;
   border: 0;
-  width: calc(100% - 5vh - 1px - 1vw);
+  width: calc(100% - 5vh - 1px - 1vw - 5vh);
   font-weight: bold;
   font-size: 1.75vh;
   font-family: "Arial";
@@ -251,15 +387,74 @@ const handleSend = async () => {
   cursor: pointer;
 }
 
+#chatInputAttach {
+  height: 4vh;
+  width: 4vh;
+  border: 0;
+  padding: 0;
+  margin-bottom: 0.5vh;
+  margin-left: 1vh;
+  //margin-right: 1vw;
+  border-radius: 100%;
+  background-color: white;
+  font-weight: bold;
+  font-size: 1.75vh;
+  font-family: "Arial";
+  color: black;
+  cursor: pointer;
+}
+
+#chatEdit {
+  margin: 0;
+  height: 5vh;
+  border-top: 1px solid white;
+}
+
+#chatEditHeader{
+  margin:0;
+  background-color: black;
+  color: white;
+  height: 3.5vh;
+  padding-top:1.5vh;
+  padding-left: 1vw;
+  border: 0;
+  width: calc(100% - 5vh - 1px - 2vw);
+  font-weight: bold;
+  font-size: 2vh;
+  font-family: "Arial";
+  vertical-align: center;
+  float:left;
+}
+
+#chatEditCancel{
+  height: 4vh;
+  width: 4vh;
+  border: 0;
+  padding: 0;
+  margin-top: 0.5vh;
+  margin-bottom: 0.5vh;
+  margin-left: 1vh;
+  margin-right: 1vw;
+  border-radius: 100%;
+  background-color: white;
+  font-weight: bold;
+  font-size: 1.75vh;
+  font-family: "Arial";
+  color: black;
+  cursor: pointer;
+  float:right;
+}
+
 .message-attachments {
-  margin-top: 4px;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
 }
 
 .attachment {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: black;
+  color:white;
+  border:1px solid white;
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
@@ -271,39 +466,49 @@ const handleSend = async () => {
 }
 
 .attachment:hover {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: grey;
 }
 
 #file-attachments {
-  border-top: 1px solid #444;
+  border-top: 1px solid white;
+  border-left: 1px solid white;
   padding: 8px;
-  background-color: #222;
+  width: calc(75vw - 8px - 8px - 1px);
+  background-color: black;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  position: absolute;
+  transform: translateY(-100%);
 }
 
 .file-item {
-  background-color: #333;
+  background-color: black;
+  color:white;
+  border:1px solid white;
   border-radius: 4px;
   padding: 4px 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+
+  font-weight: bold;
+  font-size: 2vh;
+  font-family: "Arial";
+  gap:8px;
 }
 
 .file-item button {
   background: none;
   border: none;
-  color: #ff6b6b;
   cursor: pointer;
-}
-
-.attach-button {
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-  margin: 0 8px;
+  padding:0;
+  font-weight: bold;
+  font-size: 2vh;
+  font-family: "Arial";
+  border:1px solid white;
+  border-radius:100%;
+  width:2em;
+  height:2em;
+  color:white;
 }
 </style>

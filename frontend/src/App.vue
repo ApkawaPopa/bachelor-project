@@ -1,16 +1,25 @@
 <script setup>
 import {onMounted, ref} from 'vue';
+
 import AuthForm from '@/components/auth/AuthForm.vue';
+
 import ChatList from '@/components/chat/ChatList.vue';
 import ChatWindow from '@/components/chat/ChatWindow.vue';
 import AddChatModal from '@/components/chat/AddChatModal.vue';
+import ChatMenuModal from "@/components/chat/ChatMenuModal.vue";
+
 import {useAuth} from '@/composables/useAuth';
 import {useChat} from '@/composables/useChat';
+import {useUsers} from "@/composables/useUsers.js";
 
 const {isAuthenticated, username, restoreSession, login, register} = useAuth();
-const {chats, activeChatId, activeMessages, loadChats, selectChat, sendMessage, createChat, connect} = useChat();
+const {chats, activeChatId, activeMessages, loadChats, selectChat, sendMessage, deleteMessage, editMessage, createChat, connect} = useChat();
+const {getUsersByChatId} = useUsers();
 
+const isChatCreateOpen = ref(false);
 const isChatMenuOpen = ref(false);
+
+const users = ref([]);
 
 onMounted(async () => {
   const restored = await restoreSession();
@@ -39,7 +48,12 @@ const handleRegister = async (user, pass) => {
 
 const handleCreateChat = async ({name, participants}) => {
   await createChat(name, participants);
-  isChatMenuOpen.value = false;
+  isChatCreateOpen.value = false;
+};
+
+const handleChatMenu = async () => {
+  users.value = await getUsersByChatId(activeChatId.value);
+  isChatMenuOpen.value = true;
 };
 </script>
 
@@ -52,7 +66,7 @@ const handleCreateChat = async ({name, participants}) => {
         :active-chat-id="activeChatId"
         :chats="chats"
         @select-chat="selectChat"
-        @open-add-chat="isChatMenuOpen = true"
+        @open-add-chat="isChatCreateOpen = true"
     />
     <ChatWindow
         v-if="activeChatId !== -1"
@@ -61,14 +75,26 @@ const handleCreateChat = async ({name, participants}) => {
         :chat-symmetric-key="chats.find(c => c.id === activeChatId)?.symmetricKey"
         :current-user="username"
         :messages="activeMessages"
+        :userCount="chats.find(c => c.id === activeChatId)?.userCount"
         @send-message="sendMessage"
+        @delete-message="deleteMessage"
+        @edit-message="editMessage"
         @leave-chat="activeChatId = -1"
+        @open-chat-menu="handleChatMenu"
     />
     <AddChatModal
-        v-if="isChatMenuOpen"
+        v-if="isChatCreateOpen"
+        :active-chat-id="activeChatId"
         :current-user="username"
-        @close="isChatMenuOpen = false"
+        @close="isChatCreateOpen = false"
         @create="handleCreateChat"
+    />
+    <ChatMenuModal
+        v-if="isChatMenuOpen"
+        :active-chat-id="activeChatId"
+        :chat-name="chats.find(c => c.id === activeChatId)?.name"
+        :users="users"
+        @close="isChatMenuOpen = false"
     />
   </div>
 </template>
