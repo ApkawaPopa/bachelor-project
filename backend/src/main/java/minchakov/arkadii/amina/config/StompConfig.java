@@ -144,9 +144,13 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                                 return message;
                             }
 
-                            if (!destination.equals("/user/queue/error") &&
-                                !destination.equals("/user/queue/chat") &&
-                                !destination.equals("/user/queue/unread")) {
+                            var queues = List.of(
+                                "/user/queue/error",
+                                "/user/queue/chat/created",
+                                "/user/queue/chat/deleted",
+                                "/user/queue/unread"
+                            );
+                            if (!queues.contains(destination)) {
                                 throw NotFoundException.stompDefault();
                             }
                         }
