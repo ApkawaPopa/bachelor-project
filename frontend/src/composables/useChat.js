@@ -13,7 +13,7 @@ export function useChat() {
         decryptMessageContent, encryptMessageContent, importPublicKeyFromJWK,
         rsaEncrypt, arrayBufferToBase64, generateAESKey
     } = useCrypto();
-    const {get, post} = useApi();
+    const {get, post, del} = useApi();
     const auth = useAuth();
     const {uploadFile} = useFileUpload();
     const {downloadAndDecrypt} = useFileDownload();
@@ -276,6 +276,14 @@ export function useChat() {
                 subscribeToChatTopics(data.id, symmetricKey);
             });
 
+            stompClient.value.subscribe('/user/queue/chat/deleted', async (message) => {
+                const {data} = JSON.parse(message.body);
+                const chatsInd = chats.value.findIndex(c => c.id == data);
+                chatMessages.value.delete(data);
+                chats.value.splice(chatsInd, 1);
+                if(activeChatId.value==data)activeChatId.value = -1;
+            });
+
             chats.value.forEach(chat => {
                 subscribeToChatTopics(chat.id, chat.symmetricKey);
             });
@@ -379,6 +387,11 @@ export function useChat() {
         console.log('Chat created', response.data);
     };
 
+    const deleteChat = async (chatId) => {
+        const data = await del(`/api/v1/chat/${chatId}`);
+        console.log('Chat deleted', data);
+    }
+
     onUnmounted(() => {
         if (stompClient.value) {
             stompClient.value.deactivate();
@@ -397,6 +410,7 @@ export function useChat() {
         deleteMessage,
         editMessage,
         createChat,
+        deleteChat,
         connect,
     };
 }

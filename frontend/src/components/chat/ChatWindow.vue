@@ -5,13 +5,13 @@
   </div>
   <div id="chatChatting">
     <div id="chatHeader">
-      <button id="chatHeaderLeave" @click.stop="$emit('leave-chat')">🡨</button>
+      <button id="chatHeaderLeave" @click.stop="$emit('leave-chat')">⬅</button>
       <div id="chatHeaderController" @click="$emit('open-chat-menu')">
         <p id="chatHeaderName">{{ chatName }}</p>
         <p id="chatHeaderUserCounter">{{ userCount }} участников</p>
       </div>
     </div>
-    <ul class="messages" :style="{height:isEditing ? 'calc(95vh - 5.5vh - 2px - 5vh - 1px)':'calc(95vh - 5.5vh - 2px)'}">
+    <ul class="messages" :style="{height:isEditing ? 'calc(95% - 5.5vh - 2px - 5vh - 1px)':'calc(95% - 5.5vh - 2px)'}">
       <li v-for="message in messages"
           :key="message.id"
           :class="{ messageUs: message.sender === currentUser }"
@@ -163,18 +163,30 @@ const showMenu = (message, isMe) => {
   const target = event.target.closest(".message")
   const position = target.children[0].getBoundingClientRect()
   menu.visible = true
-  if(isMe){
-    menu.x = "calc(" + String(position.x - 5 - 2) + "px - 10vw)"
-    menu.radius = "12px 0 12px 12px"
+  if(window.innerWidth>window.innerHeight) {
+    if (isMe) {
+      menu.x = "calc(" + String(position.x - 5 - 2) + "px - 10vw)"
+      menu.radius = "12px 0 12px 12px"
+    } else {
+      menu.x = String(position.x + position.width + 5) + "px"
+      menu.radius = "0 12px 12px 12px"
+    }
+    if (position.height > window.innerHeight) {
+      if (position.height - Math.abs(position.y) > window.innerHeight) menu.y = String(window.innerHeight / 2) + "px"
+      else menu.y = String((position.height + position.y) / 2) + "px"
+    } else menu.y = String(position.y + position.height / 2) + "px"
   }else{
-    menu.x = String(position.x + position.width + 5) + "px"
-    menu.radius = "0 12px 12px 12px"
+    if (isMe) {
+      menu.x = "calc(" + String(position.x - 5 - 2) + "px - 30vw)"
+      menu.radius = "12px 0 12px 12px"
+    } else {
+      menu.x = String(position.x + position.width + 5) + "px"
+      menu.radius = "0 12px 12px 12px"
+    }
+    if(position.top<window.innerHeight/100*5)menu.y = "calc(" + String(position.y+position.height) + "px - 2.5vh)"
+    else if(position.y + position.height > window.innerHeight - window.innerHeight/100*5)menu.y = "calc(" + String(position.y) + "px + 10vh)"
+    else menu.y = "calc(" + String(position.y+position.height) + "px - 2.5vh)"
   }
-  if(position.height > window.innerHeight){
-    if(position.height - Math.abs(position.y) > window.innerHeight) menu.y = String(window.innerHeight / 2) + "px"
-    else menu.y = String((position.height + position.y) / 2) + "px"
-  }
-  else menu.y = String(position.y + position.height / 2) + "px"
   menu.message = message
 }
 
@@ -184,331 +196,663 @@ document.addEventListener("click", () => {
 </script>
 
 <style scoped>
-#messageMenu{
-  position:absolute;
-  border:1px solid white;
-  width:10vw;
-  background-color: black;
+@media (orientation: portrait) {
+  #messageMenu {
+    position: absolute;
+    border: 1px solid white;
+    width: 30vw;
+    height:10vh;
+    background-color: black;
+  }
+
+  #deleteMessage, #editMessage {
+    width: 100%;
+    height: 5vh;
+    border: 0px;
+    padding: 0px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0);
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    cursor: pointer;
+  }
+
+  #chatChatting {
+    width: 100vw;
+    height: 100%;
+  }
+
+  #chatHeader {
+    margin: 0;
+    height: 5%;
+    border-bottom: 1px solid white;
+  }
+
+  #chatHeaderLeave {
+    padding: 0;
+    border: 0;
+    margin-left: 1vw;
+    height: 100%;
+    width: 4vh;
+    background-color: black;
+    color: white;
+    font-weight: 999;
+    font-size: 150%;
+    font-family: "Arial";
+    cursor: pointer;
+  }
+
+  #chatHeaderController {
+    float: right;
+    width: calc(100vw - 5vh);
+    height: 100%;
+  }
+
+  #chatHeaderName {
+    height: 50%;
+    margin: 0;
+    margin-top: 1%;
+    color: white;
+    font-weight: bold;
+    font-size: 2.25vh;
+    font-family: "Arial";
+    text-align: center;
+    overflow:hidden;
+  }
+
+  #chatHeaderUserCounter {
+    height: 35%;
+    margin: 0;
+    margin-top: 1%;
+    color: white;
+    font-weight: bold;
+    font-size: 1.25vh;
+    font-family: "Arial";
+    text-align: center;
+  }
+
+  .messages {
+    margin: 0;
+    padding: 0.5vh 1vw 0 1vw;
+    overflow-y: auto;
+    height:90%;
+  }
+
+  .messages::-webkit-scrollbar {
+    width: 0;
+  }
+
+  .message {
+    list-style: none;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    margin-bottom: 5px;
+    width: 100%;
+  }
+
+  .messageUs {
+    text-align: right;
+  }
+
+  .message-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    max-width: 70%;
+    min-width: min-content;
+    background-color: black;
+    padding: 3px;
+    border-radius: 12px 12px 12px 0;
+    border: 1px solid white;
+  }
+
+  .messageInfo {
+    display: inline-flex;
+    flex-direction: row-reverse;
+  }
+
+  .isMe {
+    border-radius: 12px 12px 0 12px;
+  }
+
+  .messageImages {
+    max-width: 50vw;
+  }
+
+  .messageImagesImage {
+    border-radius: 6px;
+    max-width: 50vw;
+  }
+
+  .messageSender {
+    color: white;
+    padding-bottom: 2px;
+  }
+
+  .messageContent {
+    color: white;
+  }
+
+  .messageStatus {
+    text-align: left;
+    color: white;
+    margin: 0;
+  }
+
+  .messageTime {
+    text-align: right;
+    color: white;
+    margin: 0;
+  }
+
+  .messageSender, .messageContent {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    font-weight: bold;
+    font-family: "Arial";
+  }
+
+  #chatInput {
+    margin: 0;
+    height: 5%;
+    border-top: 1px solid white;
+  }
+
+  #chatInputInputer {
+    background-color: black;
+    color: white;
+    height: 100%;
+    padding: 0 0 0 1vw;
+    border: 0;
+    width: calc(100% - 5vh - 1px - 1vw - 5vh);
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    vertical-align: bottom;
+  }
+
+  #chatInputInputer:focus {
+    outline: none;
+  }
+
+  #chatInputSend {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    margin-right: 1vw;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+  }
+
+  #chatInputAttach {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bolder;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+  }
+
+  #chatEdit {
+    margin: 0;
+    height: 5vh;
+    border-top: 1px solid white;
+  }
+
+  #chatEditHeader {
+    margin: 0;
+    background-color: black;
+    color: white;
+    height: 3.5vh;
+    padding-top: 1.5vh;
+    padding-left: 1vw;
+    border: 0;
+    width: calc(100% - 5vh - 1px - 2vw);
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    vertical-align: center;
+    float: left;
+  }
+
+  #chatEditCancel {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    margin-right: 1vw;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+    float: right;
+  }
+
+  .message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .attachment {
+    background-color: black;
+    color: white;
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.2s;
+  }
+
+  .attachment:hover {
+    background-color: grey;
+  }
+
+  #file-attachments {
+    border-top: 1px solid white;
+    padding: 8px;
+    width: calc(100vw - 8px - 8px);
+    background-color: black;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: absolute;
+    transform: translateY(-100%);
+  }
+
+  .file-item {
+    background-color: black;
+    color: white;
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
+
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    gap: 8px;
+  }
+
+  .file-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    border: 1px solid white;
+    border-radius: 100%;
+    width: 2em;
+    height: 2em;
+    color: white;
+  }
 }
+</style>
 
-#deleteMessage, #editMessage{
-  width:100%;
-  height:5vh;
-  border:0px;
-  padding:0px;
-  color:white;
-  background-color:rgba(0,0,0,0);
-  font-weight: bold;
-  font-size: 2vh;
-  font-family: "Arial";
-  cursor: pointer;
-}
+<style scoped>
+@media (orientation: landscape) {
+  #messageMenu {
+    position: absolute;
+    border: 1px solid white;
+    width: 10vw;
+    background-color: black;
+  }
 
-#chatChatting {
-  margin-left: 25vw;
-  width: 75vw;
-  min-height: 100vh;
-}
+  #deleteMessage, #editMessage {
+    width: 100%;
+    height: 5vh;
+    border: 0px;
+    padding: 0px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0);
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    cursor: pointer;
+  }
 
-#chatHeader {
-  margin: 0;
-  height: 5vh;
-  border-bottom: 1px solid white;
-}
+  #chatChatting {
+    margin-left: 25vw;
+    width: 75vw;
+    min-height: 100vh;
+  }
 
-#chatHeaderLeave {
-  padding: 0;
-  border: 0;
-  margin-left: 1vw;
-  height: 5vh;
-  width: 4vh;
-  background-color: black;
-  color: white;
-  font-weight: 999;
-  font-size: 4vh;
-  font-family: "Arial";
-  cursor: pointer;
-}
+  #chatHeader {
+    margin: 0;
+    height: 5vh;
+    border-bottom: 1px solid white;
+  }
 
-#chatHeaderController{
-  float: right;
-  width: calc(74vw - 5vh);
-  height: 5vh;
-}
+  #chatHeaderLeave {
+    padding: 0;
+    border: 0;
+    margin-left: 1vw;
+    height: 5vh;
+    width: 4vh;
+    background-color: black;
+    color: white;
+    font-weight: 999;
+    font-size: 4vh;
+    font-family: "Arial";
+    cursor: pointer;
+  }
 
-#chatHeaderName {
-  height: 2.5vh;
-  margin: 0;
-  margin-top: 0.25vh;
-  color: white;
-  font-weight: bold;
-  font-size: 2.25vh;
-  font-family: "Arial";
-  text-align: center;
-}
+  #chatHeaderController {
+    float: right;
+    width: calc(74vw - 5vh);
+    height: 5vh;
+  }
 
-#chatHeaderUserCounter {
-  height: 1.5vh;
-  margin: 0;
-  width: calc(74vw - 5vh);
-  margin-top: 0.75vh;
-  color: white;
-  font-weight: bold;
-  font-size: 1.25vh;
-  font-family: "Arial";
-  text-align: center;
-}
+  #chatHeaderName {
+    height: 2.5vh;
+    margin: 0;
+    margin-top: 0.25vh;
+    color: white;
+    font-weight: bold;
+    font-size: 2.25vh;
+    font-family: "Arial";
+    text-align: center;
+  }
 
-.messages {
-  margin: 0;
-  padding: 0.5vh 1vw 0 1vw;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-}
+  #chatHeaderUserCounter {
+    height: 1.5vh;
+    margin: 0;
+    width: calc(74vw - 5vh);
+    margin-top: 0.75vh;
+    color: white;
+    font-weight: bold;
+    font-size: 1.25vh;
+    font-family: "Arial";
+    text-align: center;
+  }
 
-.messages::-webkit-scrollbar {
-  width: 0;
-}
+  .messages {
+    margin: 0;
+    padding: 0.5vh 1vw 0 1vw;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
 
-.message {
-  list-style: none;
-  font-weight: bold;
-  font-size: 1.75vh;
-  font-family: "Arial";
-  margin-bottom: 5px;
-  width: 100%;
-}
+  .messages::-webkit-scrollbar {
+    width: 0;
+  }
 
-.messageUs {
-  text-align: right;
-}
+  .message {
+    list-style: none;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    margin-bottom: 5px;
+    width: 100%;
+  }
 
-.message-wrapper {
-  display: inline-flex;
-  flex-direction: column;
-  max-width: 80%;
-  min-width: min-content;
-  background-color: black;
-  padding: 3px;
-  border-radius: 12px 12px 12px 0;
-  border: 1px solid white;
-}
+  .messageUs {
+    text-align: right;
+  }
 
-.messageInfo {
-  display: inline-flex;
-  flex-direction: row-reverse;
-}
+  .message-wrapper {
+    display: inline-flex;
+    flex-direction: column;
+    max-width: 80%;
+    min-width: min-content;
+    background-color: black;
+    padding: 3px;
+    border-radius: 12px 12px 12px 0;
+    border: 1px solid white;
+  }
 
-.isMe {
-  border-radius: 12px 12px 0 12px;
-}
+  .messageInfo {
+    display: inline-flex;
+    flex-direction: row-reverse;
+  }
 
-.messageImages {
-  max-width: 60vw;
-}
+  .isMe {
+    border-radius: 12px 12px 0 12px;
+  }
 
-.messageImagesImage{
-  border-radius:6px;
-  max-width: 60vw;
-}
+  .messageImages {
+    max-width: 60vw;
+  }
 
-.messageSender {
-  color: white;
-  padding-bottom: 2px;
-}
+  .messageImagesImage {
+    border-radius: 6px;
+    max-width: 60vw;
+  }
 
-.messageContent {
-  color: white;
-}
+  .messageSender {
+    color: white;
+    padding-bottom: 2px;
+  }
 
-.messageStatus {
-  text-align: left;
-  color:white;
-  margin: 0;
-}
+  .messageContent {
+    color: white;
+  }
 
-.messageTime {
-  text-align: right;
-  color:white;
-  margin:0;
-}
+  .messageStatus {
+    text-align: left;
+    color: white;
+    margin: 0;
+  }
 
-.messageSender, .messageContent {
-  width: fit-content;
-  max-width: 100%;
-  margin: 0;
-  box-sizing: border-box;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-  font-weight: bold;
-  font-family: "Arial";
-}
+  .messageTime {
+    text-align: right;
+    color: white;
+    margin: 0;
+  }
 
-#chatInput {
-  margin: 0;
-  height: 5vh;
-  border-top: 1px solid white;
-}
+  .messageSender, .messageContent {
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    box-sizing: border-box;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    font-weight: bold;
+    font-family: "Arial";
+  }
 
-#chatInputInputer {
-  background-color: black;
-  color: white;
-  height: 100%;
-  padding: 0 0 0 1vw;
-  border: 0;
-  width: calc(100% - 5vh - 1px - 1vw - 5vh);
-  font-weight: bold;
-  font-size: 1.75vh;
-  font-family: "Arial";
-  vertical-align: bottom;
-}
+  #chatInput {
+    margin: 0;
+    height: 5vh;
+    border-top: 1px solid white;
+  }
 
-#chatInputInputer:focus {
-  outline: none;
-}
+  #chatInputInputer {
+    background-color: black;
+    color: white;
+    height: 100%;
+    padding: 0 0 0 1vw;
+    border: 0;
+    width: calc(100% - 5vh - 1px - 1vw - 5vh);
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    vertical-align: bottom;
+  }
 
-#chatInputSend {
-  height: 4vh;
-  width: 4vh;
-  border: 0;
-  padding: 0;
-  margin-bottom: 0.5vh;
-  margin-left: 1vh;
-  margin-right: 1vw;
-  border-radius: 100%;
-  background-color: white;
-  font-weight: bold;
-  font-size: 1.75vh;
-  font-family: "Arial";
-  color: black;
-  cursor: pointer;
-}
+  #chatInputInputer:focus {
+    outline: none;
+  }
 
-#chatInputAttach {
-  height: 4vh;
-  width: 4vh;
-  border: 0;
-  padding: 0;
-  margin-bottom: 0.5vh;
-  margin-left: 1vh;
-  //margin-right: 1vw;
-  border-radius: 100%;
-  background-color: white;
-  font-weight: bold;
-  font-size: 1.75vh;
-  font-family: "Arial";
-  color: black;
-  cursor: pointer;
-}
+  #chatInputSend {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    margin-right: 1vw;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+  }
 
-#chatEdit {
-  margin: 0;
-  height: 5vh;
-  border-top: 1px solid white;
-}
+  #chatInputAttach {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    //margin-right: 1vw;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+  }
 
-#chatEditHeader{
-  margin:0;
-  background-color: black;
-  color: white;
-  height: 3.5vh;
-  padding-top:1.5vh;
-  padding-left: 1vw;
-  border: 0;
-  width: calc(100% - 5vh - 1px - 2vw);
-  font-weight: bold;
-  font-size: 2vh;
-  font-family: "Arial";
-  vertical-align: center;
-  float:left;
-}
+  #chatEdit {
+    margin: 0;
+    height: 5vh;
+    border-top: 1px solid white;
+  }
 
-#chatEditCancel{
-  height: 4vh;
-  width: 4vh;
-  border: 0;
-  padding: 0;
-  margin-top: 0.5vh;
-  margin-bottom: 0.5vh;
-  margin-left: 1vh;
-  margin-right: 1vw;
-  border-radius: 100%;
-  background-color: white;
-  font-weight: bold;
-  font-size: 1.75vh;
-  font-family: "Arial";
-  color: black;
-  cursor: pointer;
-  float:right;
-}
+  #chatEditHeader {
+    margin: 0;
+    background-color: black;
+    color: white;
+    height: 3.5vh;
+    padding-top: 1.5vh;
+    padding-left: 1vw;
+    border: 0;
+    width: calc(100% - 5vh - 1px - 2vw);
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    vertical-align: center;
+    float: left;
+  }
 
-.message-attachments {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
+  #chatEditCancel {
+    height: 4vh;
+    width: 4vh;
+    border: 0;
+    padding: 0;
+    margin-top: 0.5vh;
+    margin-bottom: 0.5vh;
+    margin-left: 1vh;
+    margin-right: 1vw;
+    border-radius: 100%;
+    background-color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    font-family: "Arial";
+    color: black;
+    cursor: pointer;
+    float: right;
+  }
 
-.attachment {
-  background-color: black;
-  color:white;
-  border:1px solid white;
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  transition: background-color 0.2s;
-}
+  .message-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 
-.attachment:hover {
-  background-color: grey;
-}
+  .attachment {
+    background-color: black;
+    color: white;
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background-color 0.2s;
+  }
 
-#file-attachments {
-  border-top: 1px solid white;
-  border-left: 1px solid white;
-  padding: 8px;
-  width: calc(75vw - 8px - 8px - 1px);
-  background-color: black;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  position: absolute;
-  transform: translateY(-100%);
-}
+  .attachment:hover {
+    background-color: grey;
+  }
 
-.file-item {
-  background-color: black;
-  color:white;
-  border:1px solid white;
-  border-radius: 4px;
-  padding: 4px 8px;
-  display: flex;
-  align-items: center;
+  #file-attachments {
+    border-top: 1px solid white;
+    border-left: 1px solid white;
+    padding: 8px;
+    width: calc(75vw - 8px - 8px - 1px);
+    background-color: black;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    position: absolute;
+    transform: translateY(-100%);
+  }
 
-  font-weight: bold;
-  font-size: 2vh;
-  font-family: "Arial";
-  gap:8px;
-}
+  .file-item {
+    background-color: black;
+    color: white;
+    border: 1px solid white;
+    border-radius: 4px;
+    padding: 4px 8px;
+    display: flex;
+    align-items: center;
 
-.file-item button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding:0;
-  font-weight: bold;
-  font-size: 2vh;
-  font-family: "Arial";
-  border:1px solid white;
-  border-radius:100%;
-  width:2em;
-  height:2em;
-  color:white;
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    gap: 8px;
+  }
+
+  .file-item button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    font-weight: bold;
+    font-size: 2vh;
+    font-family: "Arial";
+    border: 1px solid white;
+    border-radius: 100%;
+    width: 2em;
+    height: 2em;
+    color: white;
+  }
 }
 </style>

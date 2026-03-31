@@ -1,5 +1,5 @@
 <template>
-  <div id="chatSelector">
+  <div id="chatSelector" :class="{mobile: activeChatId !== -1, pc: activeChatId === -1}">
     <div
         v-for="chat in chats"
         :key="chat.id"
@@ -30,131 +30,252 @@ const selectChat = (chatId) => {
 </script>
 
 <style scoped>
-#chatSelector {
-  float: left;
-  background-color: black;
-  border-right: 1px solid white;
-  width: calc(max(1vh, 1vw) * 25);
-  height: 100vh;
-  overflow: auto;
-}
+@media (orientation: portrait) {
+  #chatSelector {
+    float:left;
+    background-color: black;
+    overflow: auto;
+    height: 100%;
+  }
 
-#chatSelector::-webkit-scrollbar {
-  width: 0;
-}
+  #chatSelector::-webkit-scrollbar {
+    width: 0;
+  }
 
-.chat {
-  width: 25vw;
-  height: 6vh;
-  background-color: black;
-  border-bottom: 1px solid white;
-  cursor: pointer;
-}
+  .pc{
+    width: 100vw;
+  }
 
-.chat .chatAvatar {
-  float: left;
-  width: 5vh;
-  height: 5vh;
-  margin: 0.5vh 0 0 0.5vh;
-  background-color: white;
-  border-radius: 100%;
-}
+  .mobile{
+    width:0vw;
+    visibility:hidden;
+  }
 
-.chat .chatName {
-  overflow: hidden;
-  float: left;
-  margin: 0;
-  width: calc(25vw - 12vh - 3px);
-  color: white;
-  font-weight: bold;
-  font-size: 1.75vh;
-  height: 2vh;
-  padding: 0.5vh 0;
-  padding-left: 0.5vh;
-  font-family: "Arial";
-}
+  .chat {
+    width: 100vw;
+    height: 6vh;
+    background-color: black;
+    border-bottom: 1px solid white;
+    cursor: pointer;
+  }
 
-.chat .chatLastMessage {
-  overflow: hidden;
-  float: left;
-  margin: 0;
-  width: calc(25vw - 12vh - 3px);
-  color: white;
-  font-weight: bold;
-  font-size: 1.75vh;
-  height: 2vh;
-  padding: 0.5vh 0;
-  padding-left: 0.5vh;
-  font-family: "Arial";
-}
+  .chat .chatAvatar {
+    float: left;
+    width: 5vh;
+    height: 5vh;
+    margin: 0.5vh 0 0 0.5vh;
+    background-color: white;
+    border-radius: 100%;
+  }
 
-.chat .chatMessagesCount {
-  overflow: hidden;
-  float: right;
-  text-align: center;
-  margin: 0;
-  color: black;
-  font-weight: bold;
-  font-size: 2vh;
-  height: 1.5vh;
-  width: 3.25vh;
-  padding-top: 0.5vh;
-  padding-bottom: 1.25vh;
-  margin-right: 0.25vh;
-  margin-top: 0.25vh;
-  font-family: "Arial";
-  background-color: white;
-  border-radius: 100%;
-}
+  .chat .chatName {
+    overflow: hidden;
+    float: left;
+    margin: 0;
+    width: calc(100vw - 12vh - 3px);
+    color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    height: 2vh;
+    padding: 0.5vh 0;
+    padding-left: 0.5vh;
+    font-family: "Arial";
+  }
 
-.chat .chatTimer {
-  overflow: hidden;
-  float: right;
-  text-align: center;
-  margin: 0;
-  color: white;
-  font-weight: bold;
-  font-size: 1.5vh;
-  height: 2vh;
-  width: 6vh;
-  margin-right: 0.25vh;
-  margin-top: 0.25vh;
-  font-family: "Arial";
-}
+  .chat .chatLastMessage {
+    overflow: hidden;
+    float: left;
+    margin: 0;
+    width: calc(100vw - 12vh - 3px);
+    color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    height: 2vh;
+    padding: 0.5vh 0;
+    padding-left: 0.5vh;
+    font-family: "Arial";
+  }
 
-.chat.selected .chatAvatar {
-  background-color: black;
-}
+  .chat .chatMessagesCount {
+    overflow: hidden;
+    float: right;
+    text-align: center;
+    margin: 0;
+    color: black;
+    font-weight: bold;
+    font-size: 2vh;
+    height: 1.5vh;
+    width: 3.25vh;
+    padding-top: 0.5vh;
+    padding-bottom: 1.25vh;
+    margin-right: 0.25vh;
+    margin-top: 0.25vh;
+    font-family: "Arial";
+    background-color: white;
+    border-radius: 100%;
+  }
 
-.chat.selected .chatName {
-  color: black;
-}
+  .chat .chatTimer {
+    overflow: hidden;
+    float: right;
+    text-align: center;
+    margin: 0;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5vh;
+    height: 2vh;
+    width: 6vh;
+    margin-right: 0.25vh;
+    margin-top: 0.25vh;
+    font-family: "Arial";
+  }
 
-.chat.selected .chatLastMessage {
-  color: black;
+  #addChat {
+    position: fixed;
+    top: calc(100% - 8vh);
+    left: calc(100% - 8vh);
+    width: 7.5vh;
+    height: 7.5vh;
+    border-radius: 100%;
+    border: 0;
+    background-color: white;
+    color: black;
+    font-size: 6vh;
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+  }
 }
+</style>
 
-.chat.selected .chatTimer {
-  color: black;
-}
+<style scoped>
+@media (orientation: landscape) {
+  #chatSelector {
+    float: left;
+    background-color: black;
+    border-right: 1px solid white;
+    width: calc(max(1vh, 1vw) * 25);
+    height: 100vh;
+    overflow: auto;
+  }
 
-.chat.selected {
-  background-color: white;
-}
+  #chatSelector::-webkit-scrollbar {
+    width: 0;
+  }
 
-#addChat {
-  position: fixed;
-  top: calc(100% - calc(max(1vh, 1vw) * 5.5));
-  left: calc(max(1vh, 1vw) * 19.5);
-  width: calc(max(1vh, 1vw) * 5);
-  height: calc(max(1vh, 1vw) * 5);
-  border-radius: 100%;
-  border: 0;
-  background-color: white;
-  color: black;
-  font-size: calc(max(1vh, 1vw) * 4);
-  padding: 0;
-  text-align: center;
-  cursor: pointer;
+  .chat {
+    width: 25vw;
+    height: 6vh;
+    background-color: black;
+    border-bottom: 1px solid white;
+    cursor: pointer;
+  }
+
+  .chat .chatAvatar {
+    float: left;
+    width: 5vh;
+    height: 5vh;
+    margin: 0.5vh 0 0 0.5vh;
+    background-color: white;
+    border-radius: 100%;
+  }
+
+  .chat .chatName {
+    overflow: hidden;
+    float: left;
+    margin: 0;
+    width: calc(25vw - 12vh - 3px);
+    color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    height: 2vh;
+    padding: 0.5vh 0;
+    padding-left: 0.5vh;
+    font-family: "Arial";
+  }
+
+  .chat .chatLastMessage {
+    overflow: hidden;
+    float: left;
+    margin: 0;
+    width: calc(25vw - 12vh - 3px);
+    color: white;
+    font-weight: bold;
+    font-size: 1.75vh;
+    height: 2vh;
+    padding: 0.5vh 0;
+    padding-left: 0.5vh;
+    font-family: "Arial";
+  }
+
+  .chat .chatMessagesCount {
+    overflow: hidden;
+    float: right;
+    text-align: center;
+    margin: 0;
+    color: black;
+    font-weight: bold;
+    font-size: 2vh;
+    height: 1.5vh;
+    width: 3.25vh;
+    padding-top: 0.5vh;
+    padding-bottom: 1.25vh;
+    margin-right: 0.25vh;
+    margin-top: 0.25vh;
+    font-family: "Arial";
+    background-color: white;
+    border-radius: 100%;
+  }
+
+  .chat .chatTimer {
+    overflow: hidden;
+    float: right;
+    text-align: center;
+    margin: 0;
+    color: white;
+    font-weight: bold;
+    font-size: 1.5vh;
+    height: 2vh;
+    width: 6vh;
+    margin-right: 0.25vh;
+    margin-top: 0.25vh;
+    font-family: "Arial";
+  }
+
+  .chat.selected .chatAvatar {
+    background-color: black;
+  }
+
+  .chat.selected .chatName {
+    color: black;
+  }
+
+  .chat.selected .chatLastMessage {
+    color: black;
+  }
+
+  .chat.selected .chatTimer {
+    color: black;
+  }
+
+  .chat.selected {
+    background-color: white;
+  }
+
+  #addChat {
+    position: fixed;
+    top: calc(100% - calc(max(1vh, 1vw) * 5.5));
+    left: calc(max(1vh, 1vw) * 19.5);
+    width: calc(max(1vh, 1vw) * 5);
+    height: calc(max(1vh, 1vw) * 5);
+    border-radius: 100%;
+    border: 0;
+    background-color: white;
+    color: black;
+    font-size: calc(max(1vh, 1vw) * 4);
+    padding: 0;
+    text-align: center;
+    cursor: pointer;
+  }
 }
 </style>
