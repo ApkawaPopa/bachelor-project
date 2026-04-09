@@ -3,27 +3,31 @@
     <div id="ChatMenuBody" @click.stop>
       <div id="ChatMenuHeader">
         <p id="ChatAvatar"/>
-        <p id="ChatName">{{chatName}}</p>
+        <p id="ChatName">{{ chatName }}</p>
       </div>
       <button id="ChatMenuDelete" @click="$emit('chat-delete')">Удалить чат?</button>
       <div id="ChatMenuSafe">
         <div id="ChatMenuSafeImage">
-          <div class="ChatMenuSafeImageRow" v-for="image in imageValues">
-            <p class="ChatMenuSafeImagePixel" v-for="pixel in image" :style="{'background-color':'rgba(' + pixel[0].toString() + ',' + pixel[1].toString() + ',' + pixel[2].toString() + ',' + pixel[3].toString() + ')'}">0</p>
+          <div v-for="image in imageValues" class="ChatMenuSafeImageRow">
+            <p v-for="pixel in image"
+               :style="{'background-color':'rgba(' + pixel[0].toString() + ',' + pixel[1].toString() + ',' + pixel[2].toString() + ',' + pixel[3].toString() + ')'}"
+               class="ChatMenuSafeImagePixel">
+              0</p>
           </div>
         </div>
         <div id="ChatMenuSafeStrings">
-          <div class="ChatMenuSafeString" v-for="string in stringValues">
-            <p class="ChatMenuSafeItem" v-for="item in string">{{item}}</p>
+          <div v-for="string in stringValues" class="ChatMenuSafeString">
+            <p v-for="item in string" class="ChatMenuSafeItem">{{ item }}</p>
           </div>
         </div>
-        <p id="ChatMenuSafeText">Это изображение и текст созданы на основе ключей шифрования. Если они совпадают у всех участников, чат полностью приватен.</p>
+        <p id="ChatMenuSafeText">Это изображение и текст созданы на основе ключей шифрования. Если они совпадают у всех
+          участников, чат полностью приватен.</p>
       </div>
       <div id="ChatMenuUsers">
-        <div class="ChatMenuUser" v-for="user in users" :key="user.id">
+        <div v-for="user in users" :key="user.id" class="ChatMenuUser">
           <p class="ChatMenuUserAvatar"/>
           <p class="ChatMenuUserName">
-            {{user.username}}
+            {{ user.username }}
           </p>
         </div>
       </div>
@@ -65,7 +69,7 @@ const props = defineProps({
   #ChatMenuHeader {
     padding-top: 1vh;
     item-direction: column;
-    border-bottom:1px solid white;
+    border-bottom: 1px solid white;
   }
 
   #ChatAvatar {
@@ -91,8 +95,8 @@ const props = defineProps({
   #ChatMenuDelete {
     width: 30vw;
     border: 1px solid white;
-    border-top:0px;
-    border-radius:0 0 12px 12px;
+    border-top: 0px;
+    border-radius: 0 0 12px 12px;
     background-color: black;
     font-weight: bold;
     height: 2.5vh;
@@ -168,9 +172,9 @@ const props = defineProps({
 
   #ChatMenuUsers {
     border: 1px solid white;
-    border-radius:12px 12px 0 0;
-    padding:0 2%;
-    border-bottom:0;
+    border-radius: 12px 12px 0 0;
+    padding: 0 2%;
+    border-bottom: 0;
     width: 86%;
     height: calc(23.5vh - 1px);
     margin: 1vh 5% 0 5%;

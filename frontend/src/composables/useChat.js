@@ -29,40 +29,42 @@ export function useChat() {
 
     const activeMessages = computed(() => chatMessages.value.get(activeChatId.value) || []);
 
-    function getTextDate(data){
-        if(data.getHours()>=7)data.setUTCHours(data.getHours());
-        else data.setUTCHours(data.getHours()+24);
+    function getTextDate(data) {
         let date = data.getHours().toString() + ":";
-        if(data.getHours() < 10)date = "0" + date;
-        if(data.getMinutes() < 10)date += "0" + data.getMinutes().toString();
+        if (data.getHours() < 10) date = "0" + date;
+        if (data.getMinutes() < 10) date += "0" + data.getMinutes().toString();
         else date += data.getMinutes().toString();
         return date
+    }
+
+    function getFormattedDate(chatLastActionDate) {
+        const currentData = new Date();
+
+        if (currentData.getFullYear() === chatLastActionDate.getFullYear() &&
+            currentData.getMonth() === chatLastActionDate.getMonth() &&
+            currentData.getDate() === chatLastActionDate.getDate()) {
+            return getTextDate(chatLastActionDate)
+        }
+
+        if (currentData.getFullYear() === chatLastActionDate.getFullYear() &&
+            currentData.getMonth() === chatLastActionDate.getMonth() &&
+            Math.abs(currentData.getDate() - chatLastActionDate.getDate()) < 8) {
+            const DayOfWeek = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+            return DayOfWeek[chatLastActionDate.getDay() - 1];
+        }
+
+        if (currentData.getFullYear() === chatLastActionDate.getFullYear()) {
+            const Month = ["янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек."]
+            return chatLastActionDate.getDate().toString() + " " + Month[chatLastActionDate.getMonth()];
+        }
+
+        return chatLastActionDate.getDate().toString() + "." + chatLastActionDate.getMonth().toString() + "." + chatLastActionDate.getFullYear().toString()[2] + chatLastActionDate.getFullYear().toString()[3];
     }
 
     const loadChats = async () => {
         const data = await get('/api/v1/user/chats');
         const loadedChats = [];
         for (const item of data.data) {
-            const data = new Date(item.sortingDate);
-            if(data.getHours()>=7)data.setUTCHours(data.getHours());
-            else data.setUTCHours(data.getHours()+24);
-            const currentData = new Date();
-            let date = "";
-            if (currentData.getFullYear() == data.getFullYear() &&
-                currentData.getMonth() == data.getMonth() &&
-                currentData.getDate() == data.getDate()){
-                date = getTextDate(new Date(item.sortingDate))
-            }else if (currentData.getFullYear() == data.getFullYear() &&
-                currentData.getMonth() == data.getMonth() &&
-                Math.abs(currentData.getDate() - data.getDate()) < 8){
-                const DayOfNedelya = new Array("пн", "вт", "ср", "чт", "пт", "сб", "вс")
-                date = DayOfNedelya[data.getDay() - 1];
-            }else if (currentData.getFullYear() == data.getFullYear()) {
-                const Month = new Array("янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек.")
-                date = data.getDate().toString() + " " + Month[data.getMonth()];
-            }else{
-                date = data.getDate().toString() + "." + data.getMonth().toString() + "." + data.getFullYear().toString()[2] + data.getFullYear().toString()[3];
-            }
             const encryptedKey = base64ToArrayBuffer(item.encryptedSymmetricKey);
             const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
             const symmetricKey = await importSymmetricKey(rawSymKey);
@@ -75,8 +77,8 @@ export function useChat() {
                 name: item.name,
                 lastMessage,
                 symmetricKey,
-                time: date,
-                createdAt: getTextDate(new Date(item.sortingDate)),
+                time: getFormattedDate(new Date(item.sortingDate)),
+                invitedAt: new Date(item.invitedAt),
                 unreadMessages: item.unreadMessagesCount,
                 userCount: item.userCount
             });
@@ -112,7 +114,7 @@ export function useChat() {
                                 filename: decryptedName
                             });
                         }
-                    }catch(err){
+                    } catch (err) {
                         console.log("Catch error while loading chat[" + chatId.toString() + "], message[" + item.id.toString() + "] with content:" + decryptedContent, err)
                     }
                 }
@@ -124,6 +126,7 @@ export function useChat() {
                 fileKeys: fileKeysWithNames,
                 images: imgs,
                 time: date,
+                createdAt: new Date(item.createdAt)
             });
         }
         chatMessages.value.set(chatId, messages);
@@ -143,13 +146,13 @@ export function useChat() {
             if (data.fileKeys && data.fileKeys.length) {
                 for (const fk of data.fileKeys) {
                     const decryptedName = await decryptMessageContent(fk.filename, symmetricKey);
-                    if(decryptedName.endsWith(".jpg")||decryptedName.endsWith(".png")) {
+                    if (decryptedName.endsWith(".jpg") || decryptedName.endsWith(".png")) {
                         const blob = await downloadAndDecrypt(fk.fileKey, symmetricKey);
                         const url = URL.createObjectURL(blob);
                         imgs.push({
                             url: url
                         });
-                    }else{
+                    } else {
                         fileKeysWithNames.push({
                             fileKey: fk.fileKey,
                             filename: decryptedName
@@ -164,6 +167,7 @@ export function useChat() {
                 fileKeys: fileKeysWithNames,
                 images: imgs,
                 time: date,
+                createdAt: new Date(data.createdAt)
             };
 
             const messages = chatMessages.value.get(chatId);
@@ -174,8 +178,7 @@ export function useChat() {
 
             const chatIdx = chats.value.findIndex(c => c.id === chatId);
             if (chatIdx !== -1) {
-                let date = getTextDate(new Date(data.createdAt));
-                chats.value[chatIdx].time = date;
+                chats.value[chatIdx].time = getFormattedDate(newMessage.createdAt);
                 chats.value[chatIdx].lastMessage = decryptedContent;
                 const [chat] = chats.value.splice(chatIdx, 1);
                 chats.value.unshift(chat);
@@ -204,16 +207,16 @@ export function useChat() {
             const messages = chatMessages.value.get(chatId);
             if (!messages) return;
             const messag = messages.findIndex(c => c.id === data)
-            if (messag===null) return;
+            if (messag === null) return;
             messages.splice(messag, 1)
             const chat = chats.value.find(c => c.id === chatId)
-            if(messag == messages.length){
-                if(messag == 0){
+            if (messag == messages.length) {
+                if (messag == 0) {
                     chat.lastMessage = ""
-                    chat.time = chat.createdAt
-                }else{
-                    chat.lastMessage = messages[messag-1].content
-                    chat.time = messages[messag-1].time
+                    chat.time = getFormattedDate(chat.invitedAt)
+                } else {
+                    chat.lastMessage = messages[messag - 1].content
+                    chat.time = getFormattedDate(messages[messag - 1].createdAt)
                 }
             }
         });
@@ -228,7 +231,7 @@ export function useChat() {
             const messag = messages.find(c => c.id === data.id)
             if (!messag) return;
             const messagInd = messages.findIndex(c => c == messag)
-            if(messagInd == messages.length - 1)chat.lastMessage = decryptContent
+            if (messagInd == messages.length - 1) chat.lastMessage = decryptContent
             messag.content = decryptContent
         });
 
@@ -267,8 +270,8 @@ export function useChat() {
                     name: data.name,
                     lastMessage: '',
                     symmetricKey,
-                    time: getTextDate(new Date(data.createdAt)),
-                    createdAt: getTextDate(new Date(data.createdAt)),
+                    time: getFormattedDate(new Date(data.invitedAt)),
+                    invitedAt: new Date(data.invitedAt),
                     userCount: data.userCount
                 };
                 chats.value.unshift(newChat);
@@ -281,7 +284,7 @@ export function useChat() {
                 const chatsInd = chats.value.findIndex(c => c.id == data);
                 chatMessages.value.delete(data);
                 chats.value.splice(chatsInd, 1);
-                if(activeChatId.value==data)activeChatId.value = -1;
+                if (activeChatId.value == data) activeChatId.value = -1;
             });
 
             chats.value.forEach(chat => {

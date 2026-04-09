@@ -1,5 +1,5 @@
 <template>
-  <div id="messageMenu" v-if="menu.visible" :style="{top:menu.y, left:menu.x, 'border-radius':menu.radius}">
+  <div v-if="menu.visible" id="messageMenu" :style="{top:menu.y, left:menu.x, 'border-radius':menu.radius}">
     <button id="deleteMessage" @click.stop="handleDelete">Удалить</button>
     <button id="editMessage" @click.stop="handleEdit">Изменить</button>
   </div>
@@ -11,7 +11,7 @@
         <p id="chatHeaderUserCounter">{{ userCount }} участников</p>
       </div>
     </div>
-    <ul class="messages" :style="{height:isEditing ? 'calc(95% - 5.5vh - 2px - 5vh - 1px)':'calc(95% - 5.5vh - 2px)'}">
+    <ul :style="{height:isEditing ? 'calc(95% - 5.5vh - 2px - 5vh - 1px)':'calc(95% - 5.5vh - 2px)'}" class="messages">
       <li v-for="message in messages"
           :key="message.id"
           :class="{ messageUs: message.sender === currentUser }"
@@ -19,8 +19,8 @@
           @click.stop="showMenu(message, message.sender === currentUser)">
         <div :class="{ isMe: message.sender === currentUser }" class="message-wrapper">
           <p v-if="message.sender !== currentUser" class="messageSender">{{ message.sender }}</p>
-          <div class="messageImages" v-if="message.images && message.images.length">
-            <img class="messageImagesImage" v-for="image in message.images" :src="image.url">
+          <div v-if="message.images && message.images.length" class="messageImages">
+            <img v-for="image in message.images" :src="image.url" class="messageImagesImage">
           </div>
           <p class="messageContent">
             {{ message.content }}
@@ -32,10 +32,10 @@
           </div>
           <div class="messageInfo">
             <p v-if="message.sender === currentUser" class="messageStatus">
-              {{message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚')}}
+              {{ message.receivers.length >= 2 ? '🤝' : (message.receivers.length === 1 ? '👋' : '🕚') }}
             </p>
             <p class="messageTime">
-              {{message.time}}
+              {{ message.time }}
             </p>
           </div>
         </div>
@@ -55,8 +55,8 @@
     </div>
 
     <form id="chatInput" @submit.prevent="handleSend">
-      <input ref="fileInput" multiple style="display: none" type="file" @change="onFileSelect" autocomplete="off"/>
-      <input id="chatInputInputer" v-model="newMessage" placeholder="Сообщение" autocomplete="off"/>
+      <input ref="fileInput" autocomplete="off" multiple style="display: none" type="file" @change="onFileSelect"/>
+      <input id="chatInputInputer" v-model="newMessage" autocomplete="off" placeholder="Сообщение"/>
       <button id="chatInputAttach" type="button" @click="!isEditing ? $refs.fileInput.click() : ''">🧷</button>
       <button id="chatInputSend" type="submit">💬</button>
     </form>
@@ -129,9 +129,9 @@ const formatSize = (bytes) => {
 
 const handleSend = () => {
   if (!newMessage.value.trim() && selectedFiles.value.length === 0) return;
-  if(isEditing.value){
-    if(newMessage.value !== menu.message.content)emit('edit-message', menu.message.id, newMessage.value);
-  }else{
+  if (isEditing.value) {
+    if (newMessage.value !== menu.message.content) emit('edit-message', menu.message.id, newMessage.value);
+  } else {
     emit('send-message', newMessage.value, selectedFiles.value);
   }
   newMessage.value = '';
@@ -159,11 +159,11 @@ const menu = reactive({
 })
 
 const showMenu = (message, isMe) => {
-  if(!isMe)return;
+  if (!isMe) return;
   const target = event.target.closest(".message")
   const position = target.children[0].getBoundingClientRect()
   menu.visible = true
-  if(window.innerWidth>window.innerHeight) {
+  if (window.innerWidth > window.innerHeight) {
     if (isMe) {
       menu.x = "calc(" + String(position.x - 5 - 2) + "px - 10vw)"
       menu.radius = "12px 0 12px 12px"
@@ -175,7 +175,7 @@ const showMenu = (message, isMe) => {
       if (position.height - Math.abs(position.y) > window.innerHeight) menu.y = String(window.innerHeight / 2) + "px"
       else menu.y = String((position.height + position.y) / 2) + "px"
     } else menu.y = String(position.y + position.height / 2) + "px"
-  }else{
+  } else {
     if (isMe) {
       menu.x = "calc(" + String(position.x - 5 - 2) + "px - 30vw)"
       menu.radius = "12px 0 12px 12px"
@@ -183,9 +183,9 @@ const showMenu = (message, isMe) => {
       menu.x = String(position.x + position.width + 5) + "px"
       menu.radius = "0 12px 12px 12px"
     }
-    if(position.top<window.innerHeight/100*5)menu.y = "calc(" + String(position.y+position.height) + "px - 2.5vh)"
-    else if(position.y + position.height > window.innerHeight - window.innerHeight/100*5)menu.y = "calc(" + String(position.y) + "px + 10vh)"
-    else menu.y = "calc(" + String(position.y+position.height) + "px - 2.5vh)"
+    if (position.top < window.innerHeight / 100 * 5) menu.y = "calc(" + String(position.y + position.height) + "px - 2.5vh)"
+    else if (position.y + position.height > window.innerHeight - window.innerHeight / 100 * 5) menu.y = "calc(" + String(position.y) + "px + 10vh)"
+    else menu.y = "calc(" + String(position.y + position.height) + "px - 2.5vh)"
   }
   menu.message = message
 }
@@ -201,7 +201,7 @@ document.addEventListener("click", () => {
     position: absolute;
     border: 1px solid white;
     width: 30vw;
-    height:10vh;
+    height: 10vh;
     background-color: black;
   }
 
@@ -258,7 +258,7 @@ document.addEventListener("click", () => {
     font-size: 2.25vh;
     font-family: "Arial";
     text-align: center;
-    overflow:hidden;
+    overflow: hidden;
   }
 
   #chatHeaderUserCounter {
@@ -276,7 +276,7 @@ document.addEventListener("click", () => {
     margin: 0;
     padding: 0.5vh 1vw 0 1vw;
     overflow-y: auto;
-    height:90%;
+    height: 90%;
   }
 
   .messages::-webkit-scrollbar {

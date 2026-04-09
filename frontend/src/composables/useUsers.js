@@ -3,7 +3,7 @@ import {useApi} from './useApi';
 
 const users = ref([]);
 
-export function useUsers(){
+export function useUsers() {
     const {get, post} = useApi();
 
     const getUsersByChatId = async (chatId) => {

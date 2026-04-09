@@ -60,136 +60,136 @@ const handleRegister = () => {
 };
 </script>
 <style>
-  @media (orientation: portrait) {
-    #autorizationForm {
-      border: 1px solid white;
-      width: 25vh;
-      height: 40vh;
-      margin-left: calc(50vw - 12.5vh);
-      margin-top: calc(50vh - 20vh);
-    }
-
-    #changeAutorization {
-      height: 6vh;
-      width: 100%;
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: 1fr;
-      text-align: center;
-    }
-
-    #LoginButton {
-      background-color: rgb(0, 0, 0);
-      padding: 0;
-      border: 0;
-      color: white;
-      font-weight: bold;
-      font-size: 100%;
-      font-family: "Arial";
-    }
-
-    #RegButton {
-      background-color: rgb(255, 255, 255);
-      padding: 0;
-      border: 0;
-      color: rgb(0, 0, 0);
-      font-weight: bold;
-      font-size: 100%;
-      font-family: "Arial";
-    }
-
-    #login, #reg {
-      height: 32vh;
-      margin: 0;
-      width: 80%;
-      padding-left: 2.5vh;
-      text-align: center;
-    }
-
-    #login {
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(3, 1fr);
-      grid-row-gap: 0.5vh;
-    }
-
-    #reg {
-      display: grid;
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(4, 1fr);
-      grid-row-gap: 0.25vh;
-    }
-
-    .error {
-      padding-top: 1.5vh;
-    }
-
-    .noError {
-      padding-top: 0.5vh;
-    }
-
-    #autorizationForm.unselected input {
-      background: rgb(0, 0, 0);
-      color: white;
-      font-weight: bold;
-      font-family: "Arial";
-      width: 20vh;
-      font-size: 100%;
-
-      text-align: center;
-      border: 1px solid white;
-      padding: 0px;
-    }
-
-    #autorizationForm.selected input {
-      background: white;
-      color: black;
-      font-weight: bold;
-      font-family: "Arial";
-      width: 20vh;
-      font-size: 100%;
-
-      text-align: center;
-      border: 2px solid rgb(0, 0, 0);
-      padding: 0px;
-    }
-
-    #autorizationForm.selected .inBut {
-      background-color: black;
-      color: white;
-    }
-
-    #autorizationForm.unselected .inBut {
-      background-color: white;
-      color: black;
-    }
-
-    .inBut {
-      font-weight: bold;
-      font-size: 100%;
-      font-family: "Arial";
-      border: 0;
-      padding: 0;
-    }
-
-    #error {
-      width: 25vh;
-      font-size: 1.25vh;
-      margin: 0;
-      margin-top: 6vh;
-      color: red;
-      font-family: "Arial";
-      position: fixed;
-    }
-
-    .unselected {
-      background: black;
-    }
-
-    .selected {
-      background: white;
-    }
+@media (orientation: portrait) {
+  #autorizationForm {
+    border: 1px solid white;
+    width: 25vh;
+    height: 40vh;
+    margin-left: calc(50vw - 12.5vh);
+    margin-top: calc(50vh - 20vh);
   }
+
+  #changeAutorization {
+    height: 6vh;
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: 1fr;
+    text-align: center;
+  }
+
+  #LoginButton {
+    background-color: rgb(0, 0, 0);
+    padding: 0;
+    border: 0;
+    color: white;
+    font-weight: bold;
+    font-size: 100%;
+    font-family: "Arial";
+  }
+
+  #RegButton {
+    background-color: rgb(255, 255, 255);
+    padding: 0;
+    border: 0;
+    color: rgb(0, 0, 0);
+    font-weight: bold;
+    font-size: 100%;
+    font-family: "Arial";
+  }
+
+  #login, #reg {
+    height: 32vh;
+    margin: 0;
+    width: 80%;
+    padding-left: 2.5vh;
+    text-align: center;
+  }
+
+  #login {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    grid-row-gap: 0.5vh;
+  }
+
+  #reg {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, 1fr);
+    grid-row-gap: 0.25vh;
+  }
+
+  .error {
+    padding-top: 1.5vh;
+  }
+
+  .noError {
+    padding-top: 0.5vh;
+  }
+
+  #autorizationForm.unselected input {
+    background: rgb(0, 0, 0);
+    color: white;
+    font-weight: bold;
+    font-family: "Arial";
+    width: 20vh;
+    font-size: 100%;
+
+    text-align: center;
+    border: 1px solid white;
+    padding: 0px;
+  }
+
+  #autorizationForm.selected input {
+    background: white;
+    color: black;
+    font-weight: bold;
+    font-family: "Arial";
+    width: 20vh;
+    font-size: 100%;
+
+    text-align: center;
+    border: 2px solid rgb(0, 0, 0);
+    padding: 0px;
+  }
+
+  #autorizationForm.selected .inBut {
+    background-color: black;
+    color: white;
+  }
+
+  #autorizationForm.unselected .inBut {
+    background-color: white;
+    color: black;
+  }
+
+  .inBut {
+    font-weight: bold;
+    font-size: 100%;
+    font-family: "Arial";
+    border: 0;
+    padding: 0;
+  }
+
+  #error {
+    width: 25vh;
+    font-size: 1.25vh;
+    margin: 0;
+    margin-top: 6vh;
+    color: red;
+    font-family: "Arial";
+    position: fixed;
+  }
+
+  .unselected {
+    background: black;
+  }
+
+  .selected {
+    background: white;
+  }
+}
 </style>
 
 <style scoped>

@@ -53,12 +53,13 @@ public class UserService extends CrudServiceImpl<User, Integer> {
 
             String messageContent;
             LocalDateTime messageCreatedAt;
+            LocalDateTime invitedAt = userChat.getCreatedAt();
             LocalDateTime sortingDate;
 
             if (lastMessage.isEmpty()) {
                 messageContent = "";
                 messageCreatedAt = null;
-                sortingDate = userChat.getCreatedAt();
+                sortingDate = invitedAt;
             } else {
                 messageContent = lastMessage.get().getContent();
                 messageCreatedAt = sortingDate = lastMessage.get().getCreatedAt();
@@ -72,7 +73,8 @@ public class UserService extends CrudServiceImpl<User, Integer> {
                 messageCreatedAt,
                 sortingDate,
                 getUnreadMessagesCount(chat, user),
-                userCount
+                userCount,
+                invitedAt
             );
         }).sorted(Comparator.comparing(ListUserChatsChatDTO::sortingDate).reversed()).toList();
     }

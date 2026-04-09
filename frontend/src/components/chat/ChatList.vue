@@ -32,7 +32,7 @@ const selectChat = (chatId) => {
 <style scoped>
 @media (orientation: portrait) {
   #chatSelector {
-    float:left;
+    float: left;
     background-color: black;
     overflow: auto;
     height: 100%;
@@ -42,13 +42,13 @@ const selectChat = (chatId) => {
     width: 0;
   }
 
-  .pc{
+  .pc {
     width: 100vw;
   }
 
-  .mobile{
-    width:0vw;
-    visibility:hidden;
+  .mobile {
+    width: 0vw;
+    visibility: hidden;
   }
 
   .chat {

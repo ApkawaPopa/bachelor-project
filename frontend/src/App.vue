@@ -15,7 +15,19 @@ import {useCrypto} from "@/composables/useCrypto.js";
 
 const {sha256} = useCrypto();
 const {isAuthenticated, username, restoreSession, login, register} = useAuth();
-const {chats, activeChatId, activeMessages, loadChats, selectChat, sendMessage, deleteMessage, editMessage, createChat, deleteChat, connect} = useChat();
+const {
+  chats,
+  activeChatId,
+  activeMessages,
+  loadChats,
+  selectChat,
+  sendMessage,
+  deleteMessage,
+  editMessage,
+  createChat,
+  deleteChat,
+  connect
+} = useChat();
 const {getUserKeysByChatId} = useUsers();
 
 const isChatCreateOpen = ref(false);
@@ -59,50 +71,52 @@ const handleChatMenu = async () => {
   users.value = await getUserKeysByChatId(activeChatId.value);
   ImageValues.value = []
   let keys = activeChatId.value.toString()
-  for(const user of users.value){
+  for (const user of users.value) {
     keys += user.publicKey;
   }
   const keysHash = await sha256(keys);
+
+
   const keysHash2 = await sha256(keysHash);
-  for(let i=0;i<64;i+=16){
+  for (let i = 0; i < 64; i += 16) {
     let keySlice = "";
     let keySlices = []
-    keySlice = keysHash.slice(i, i+16).toUpperCase();
-    for(let k=0;k<16;k+=2)keySlices[k/2] = keySlice.slice(k, k+2)
-    StringValues.value[i/16] = keySlices
+    keySlice = keysHash.slice(i, i + 16).toUpperCase();
+    for (let k = 0; k < 16; k += 2) keySlices[k / 2] = keySlice.slice(k, k + 2)
+    StringValues.value[i / 16] = keySlices
   }
   let idx = 0;
   let keySliceRGB = [];
-  for(let i=0;i<64;i+=4){
+  for (let i = 0; i < 64; i += 4) {
     let keySlice = "";
-    keySlice = keysHash.slice(i, i+4);
+    keySlice = keysHash.slice(i, i + 4);
     let keySlice2 = "";
-    keySlice2 = keysHash2.slice(i, i+4);
+    keySlice2 = keysHash2.slice(i, i + 4);
 
     let keySum = 0;
     let keySum2 = 0;
 
     let keySliceCodes = [];
-    for(let k=0;k<4;k++){
+    for (let k = 0; k < 4; k++) {
       keySliceCodes[k] = keySlice.codePointAt(k);
-      keySliceCodes[k+4] = keySlice2.codePointAt(k);
+      keySliceCodes[k + 4] = keySlice2.codePointAt(k);
 
       keySum += keySliceCodes[k];
-      keySum2 += keySliceCodes[k+4];
+      keySum2 += keySliceCodes[k + 4];
     }
-    keySliceCodes[8] = Math.abs(keySum-keySum2)
+    keySliceCodes[8] = Math.abs(keySum - keySum2)
 
-    for(let f=0;f<8;f++) {
-      for(let k=f+1;k<=8;k++) {
-        if(keySliceCodes[k] < keySliceCodes[f])keySliceRGB[idx++] = keySliceCodes[k] / keySliceCodes[f] * 255;
+    for (let f = 0; f < 8; f++) {
+      for (let k = f + 1; k <= 8; k++) {
+        if (keySliceCodes[k] < keySliceCodes[f]) keySliceRGB[idx++] = keySliceCodes[k] / keySliceCodes[f] * 255;
         else keySliceRGB[idx++] = keySliceCodes[f] / keySliceCodes[k] * 255;
       }
     }
   }
-  for(let i=0;i<576;i+=48){
+  for (let i = 0; i < 576; i += 48) {
     let keySliceRGBsub = [];
-    for(let k=i;k<i+48;k+=4){
-      keySliceRGBsub.push(keySliceRGB.slice(k, k+4))
+    for (let k = i; k < i + 48; k += 4) {
+      keySliceRGBsub.push(keySliceRGB.slice(k, k + 4))
     }
     ImageValues.value.push(keySliceRGBsub)
   }
@@ -151,11 +165,11 @@ const handleChatDelete = () => {
         v-if="isChatMenuOpen"
         :active-chat-id="activeChatId"
         :chat-name="chats.find(c => c.id === activeChatId)?.name"
-        :users="users"
-        :string-values="StringValues"
         :image-values="ImageValues"
-        @chat-delete="handleChatDelete"
+        :string-values="StringValues"
+        :users="users"
         @close="isChatMenuOpen = false"
+        @chat-delete="handleChatDelete"
     />
   </div>
 </template>
