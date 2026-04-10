@@ -69,3 +69,9 @@ create table s3_object
     created_at     timestamp                                        not null,
     sent_at        timestamp
 );
+
+create index if not exists idx_user_chat_chat_id on user_chat (chat_id);
+create index if not exists idx_message_chat_created_at on message (chat_id, created_at);
+create index if not exists idx_message_receiver_chat_receiver on message_receiver (chat_id, receiver_id);
+create index if not exists idx_s3_object_message_id on s3_object (message_id);
+create index if not exists idx_s3_object_cleanup on s3_object (created_at) where message_id is null;

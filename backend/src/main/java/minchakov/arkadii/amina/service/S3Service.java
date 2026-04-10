@@ -84,6 +84,7 @@ public class S3Service {
                 .allMatch(
                     obj ->
                         obj != null &&
+                        obj.getMessage() != null &&
                         userChatRepository.existsByUserAndChat(currentUser, obj.getMessage().getChat()) &&
                         internalS3Template.objectExists(S3_BUCKET, String.valueOf(obj.getId()))
                 )

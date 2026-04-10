@@ -57,8 +57,10 @@
     <form id="chatInput" @submit.prevent="handleSend">
       <input ref="fileInput" autocomplete="off" multiple style="display: none" type="file" @change="onFileSelect"/>
       <input id="chatInputInputer" v-model="newMessage" autocomplete="off" placeholder="Сообщение"/>
-      <button id="chatInputAttach" type="button" @click="!isEditing ? $refs.fileInput.click() : ''">🧷</button>
-      <button id="chatInputSend" type="submit">💬</button>
+      <button id="chatInputAttach" style="background-color: black" type="button"
+              @click="!isEditing ? $refs.fileInput.click() : ''">🧷
+      </button>
+      <button id="chatInputSend" style="background-color: black" type="submit">💬</button>
     </form>
   </div>
 </template>
