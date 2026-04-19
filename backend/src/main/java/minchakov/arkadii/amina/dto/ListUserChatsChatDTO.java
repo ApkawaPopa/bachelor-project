@@ -1,6 +1,8 @@
 package minchakov.arkadii.amina.dto;
 
+import java.net.URL;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record ListUserChatsChatDTO(
     int id,
@@ -10,6 +12,7 @@ public record ListUserChatsChatDTO(
     LocalDateTime sortingDate,
     int unreadMessagesCount,
     int userCount,
-    LocalDateTime invitedAt
+    LocalDateTime invitedAt,
+    List<URL> pictureUrls
 ) {
 }

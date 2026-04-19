@@ -28,15 +28,23 @@ public class S3Object {
     @JoinColumn(name = "owner_id", nullable = false)
     private User owner;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "message_id")
     private Message message;
 
-    @Column(name = "sent_at")
-    private LocalDateTime sentAt;
+    @ManyToOne
+    @JoinColumn(name = "chat_id")
+    private Chat chat;
+
+    @Column(name = "confirmed_at")
+    private LocalDateTime confirmedAt;
+
+    @Column(name = "created_at", nullable = false)
+    private LocalDateTime createdAt;
 
     public S3Object() {
     }
@@ -75,12 +83,12 @@ public class S3Object {
         this.owner = owner;
     }
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
+    public User getUser() {
+        return user;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public Message getMessage() {
@@ -91,11 +99,27 @@ public class S3Object {
         this.message = message;
     }
 
-    public LocalDateTime getSentAt() {
-        return sentAt;
+    public Chat getChat() {
+        return chat;
     }
 
-    public void setSentAt(LocalDateTime sentAt) {
-        this.sentAt = sentAt;
+    public void setChat(Chat chat) {
+        this.chat = chat;
+    }
+
+    public LocalDateTime getConfirmedAt() {
+        return confirmedAt;
+    }
+
+    public void setConfirmedAt(LocalDateTime confirmedAt) {
+        this.confirmedAt = confirmedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

@@ -48,13 +48,13 @@ export function useChat() {
 
         if (currentData.getFullYear() === chatLastActionDate.getFullYear() &&
             currentData.getMonth() === chatLastActionDate.getMonth() &&
-            Math.abs(currentData.getDate() - chatLastActionDate.getDate()) < 8) {
-            const DayOfWeek = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
-            return DayOfWeek[chatLastActionDate.getDay() - 1];
+            currentData.getDate() - chatLastActionDate.getDate() < 8) {
+            const DayOfWeek = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"]
+            return DayOfWeek[chatLastActionDate.getDay()];
         }
 
         if (currentData.getFullYear() === chatLastActionDate.getFullYear()) {
-            const Month = ["янв.", "фев.", "мар.", "апр.", "мая", "июнь", "июль", "авг.", "сен.", "окт.", "ноя.", "дек."]
+            const Month = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
             return chatLastActionDate.getDate().toString() + " " + Month[chatLastActionDate.getMonth()];
         }
 

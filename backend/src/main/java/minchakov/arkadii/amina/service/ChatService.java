@@ -8,6 +8,7 @@ import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.model.UserChat;
 import minchakov.arkadii.amina.repository.ChatRepository;
+import minchakov.arkadii.amina.repository.S3ObjectRepository;
 import minchakov.arkadii.amina.repository.UserChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
 import org.springframework.context.ApplicationEventPublisher;
@@ -15,7 +16,10 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URL;
+import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -26,16 +30,23 @@ public class ChatService {
     private final ChatRepository chatRepository;
     private final UserChatRepository userChatRepository;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final S3ObjectRepository s3ObjectRepository;
+    private final S3Service s3Service;
 
     public ChatService(
         UserRepository userRepository,
         ChatRepository chatRepository,
-        UserChatRepository userChatRepository, ApplicationEventPublisher applicationEventPublisher
+        UserChatRepository userChatRepository,
+        ApplicationEventPublisher applicationEventPublisher,
+        S3Service s3Service,
+        S3ObjectRepository s3ObjectRepository
     ) {
         this.userRepository = userRepository;
         this.chatRepository = chatRepository;
         this.userChatRepository = userChatRepository;
         this.applicationEventPublisher = applicationEventPublisher;
+        this.s3Service = s3Service;
+        this.s3ObjectRepository = s3ObjectRepository;
     }
 
     public Chat createChat(ChatCreateDTO chatCreateDTO) {
@@ -126,5 +137,30 @@ public class ChatService {
         }
 
         throw new AccessDeniedException("You don't have access to this chat");
+    }
+
+    public URL setChatPicture(int chatId, int objectId, User currentUser) {
+        currentUser = userRepository
+            .findByUsername(currentUser.getUsername())
+            .orElseThrow(() -> new InternalServerErrorException("Current logged-in user not found in repository"));
+
+        var chat = chatRepository.findById(chatId).orElse(null);
+        if (chat == null || !userChatRepository.existsByUserAndChat(currentUser, chat)) {
+            throw new AccessDeniedException("You don't have access to this chat");
+        }
+
+        var picture = s3ObjectRepository.findById(objectId).orElse(null);
+        if (picture == null || picture.getOwner().equals(currentUser)) {
+            throw new AccessDeniedException("You don't have access to this picture");
+        }
+        if (picture.getConfirmedAt() != null) {
+            throw new AccessDeniedException("Picture object already in use");
+        }
+
+        picture.setChat(chat);
+        picture.setConfirmedAt(LocalDateTime.now());
+        s3ObjectRepository.save(picture);
+
+        return s3Service.getSignedGetUrls(List.of(objectId), currentUser).getFirst();
     }
 }

@@ -1,6 +1,6 @@
 package minchakov.arkadii.amina.jobs;
 
-import minchakov.arkadii.amina.repository.S3ObjectRepository;
+import minchakov.arkadii.amina.service.S3Service;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -9,14 +9,14 @@ import java.time.LocalDateTime;
 @Component
 public class CleanUnconfirmedObjectsJob {
 
-    private final S3ObjectRepository s3ObjectRepository;
+    private final S3Service s3Service;
 
-    public CleanUnconfirmedObjectsJob(S3ObjectRepository s3ObjectRepository) {
-        this.s3ObjectRepository = s3ObjectRepository;
+    public CleanUnconfirmedObjectsJob(S3Service s3Service) {
+        this.s3Service = s3Service;
     }
 
-    @Scheduled(cron = "0 0 /6 * * *")
+    @Scheduled(cron = "0 0 * * * *")
     public void cleanUnconfirmedObjects() {
-        s3ObjectRepository.deleteByMessageIsNullAndCreatedAtIsBefore(LocalDateTime.now().minusHours(6));
+        s3Service.cleanUnconfirmedObjectsBefore(LocalDateTime.now().minusHours(1));
     }
 }

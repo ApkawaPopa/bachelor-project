@@ -104,7 +104,7 @@ public class StompMessageController {
         if (!files.isEmpty()) {
             for (var file : files) {
                 file.setMessage(savedMessage);
-                file.setSentAt(savedMessage.getCreatedAt());
+                file.setConfirmedAt(savedMessage.getCreatedAt());
             }
             s3ObjectRepository.saveAll(files);
         }

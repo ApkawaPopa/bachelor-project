@@ -9,6 +9,7 @@ import minchakov.arkadii.amina.dto.UnreadMessagesCountDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
+import minchakov.arkadii.amina.service.S3Service;
 import minchakov.arkadii.amina.service.UserService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
@@ -22,17 +23,20 @@ public class ChatEventPublisher {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final UserService userService;
     private final UserRepository userRepository;
+    private final S3Service s3Service;
 
     public ChatEventPublisher(
         ChatRepository chatRepository,
         SimpMessagingTemplate simpMessagingTemplate,
         UserService userService,
-        UserRepository userRepository
+        UserRepository userRepository,
+        S3Service s3Service
     ) {
         this.chatRepository = chatRepository;
         this.simpMessagingTemplate = simpMessagingTemplate;
         this.userService = userService;
         this.userRepository = userRepository;
+        this.s3Service = s3Service;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -49,7 +53,8 @@ public class ChatEventPublisher {
                 chat.getName(),
                 chatUser.getEncryptedSymmetricKey(),
                 chat.getCreatedAt(),
-                userCount
+                userCount,
+                s3Service.getChatPictures(chat)
             ));
             System.out.println(user.getUsername());
             simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat/created", stompResponse);

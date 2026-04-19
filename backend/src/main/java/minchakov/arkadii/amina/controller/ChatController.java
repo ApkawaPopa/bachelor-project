@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.URL;
 import java.util.List;
 import java.util.Set;
 
@@ -82,5 +83,14 @@ public class ChatController {
         UserChat chatUser = chatService.getChatUser(id, currentUser);
         var encryptedSymmetricKey = chatUser.getEncryptedSymmetricKey();
         return RestResponse.success(encryptedSymmetricKey);
+    }
+
+    @PostMapping("/{chatId}/picture")
+    public RestResponse<URL> setChatPicture(
+        @PathVariable int chatId,
+        @RequestBody int objectId,
+        @AuthenticationPrincipal User currentUser
+    ) {
+        return RestResponse.success(chatService.setChatPicture(chatId, objectId, currentUser));
     }
 }

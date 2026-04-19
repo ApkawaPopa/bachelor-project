@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotEmpty;
 import minchakov.arkadii.amina.dto.GetSignedPutUrlsOutDto;
 import minchakov.arkadii.amina.exception.BadRequestException;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
+import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.S3Object;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.repository.S3ObjectRepository;
@@ -19,8 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URL;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 @Service
 @Transactional
@@ -99,5 +102,33 @@ public class S3Service {
                 Duration.ofMinutes(15)
             ))
             .toList();
+    }
+
+    public List<URL> getChatPictures(Chat chat) {
+        return getPictures(chat, s3ObjectRepository::findAllByChat);
+    }
+
+    public List<URL> getProfilePictures(User user) {
+        return getPictures(user, s3ObjectRepository::findAllByUser);
+    }
+
+    private <T> List<URL> getPictures(T o, Function<T, List<S3Object>> findAllBy) {
+        return findAllBy
+            .apply(o)
+            .stream()
+            .map(picture -> internalS3Template.createSignedGetURL(
+                S3_BUCKET,
+                String.valueOf(picture.getId()),
+                Duration.ofDays(30)
+            ))
+            .toList();
+    }
+
+    public void cleanUnconfirmedObjectsBefore(LocalDateTime createdAt) {
+        var objectsIds = s3ObjectRepository.getUnconfirmedObjectsIds(createdAt);
+        for (var id : objectsIds) {
+            internalS3Template.deleteObject(S3_BUCKET, id.toString());
+        }
+        s3ObjectRepository.deleteAllById(objectsIds);
     }
 }
