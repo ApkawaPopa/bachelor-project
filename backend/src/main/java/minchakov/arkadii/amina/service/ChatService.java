@@ -150,7 +150,7 @@ public class ChatService {
         }
 
         var picture = s3ObjectRepository.findById(objectId).orElse(null);
-        if (picture == null || picture.getOwner().equals(currentUser)) {
+        if (picture == null || !picture.getOwner().equals(currentUser)) {
             throw new AccessDeniedException("You don't have access to this picture");
         }
         if (picture.getConfirmedAt() != null) {

@@ -86,11 +86,16 @@ public class S3Service {
                 )
                 .allMatch(
                     obj ->
-                        obj != null &&
-                        obj.getMessage() != null &&
-                        userChatRepository.existsByUserAndChat(currentUser, obj.getMessage().getChat()) &&
+                        obj != null && (
+                            obj.getMessage() != null &&
+                            userChatRepository.existsByUserAndChat(currentUser, obj.getMessage().getChat()) ||
+                            obj.getChat() != null &&
+                            userChatRepository.existsByUserAndChat(currentUser, obj.getChat()) ||
+                            user.equals(obj.getUser())
+                        ) &&
                         internalS3Template.objectExists(S3_BUCKET, String.valueOf(obj.getId()))
                 )
+
         ) {
             throw new BadRequestException("Given invalid key set");
         }
@@ -116,10 +121,10 @@ public class S3Service {
         return findAllBy
             .apply(o)
             .stream()
-            .map(picture -> internalS3Template.createSignedGetURL(
+            .map(picture -> externalS3Template.createSignedGetURL(
                 S3_BUCKET,
                 String.valueOf(picture.getId()),
-                Duration.ofDays(30)
+                Duration.ofDays(7)
             ))
             .toList();
     }

@@ -111,7 +111,7 @@ public class UserService extends CrudServiceImpl<User, Integer> {
             .orElseThrow(() -> new InternalServerErrorException("Current logged-in user not found in repository"));
 
         var picture = s3ObjectRepository.findById(objectId).orElse(null);
-        if (picture == null || picture.getOwner().equals(currentUser)) {
+        if (picture == null || !picture.getOwner().equals(currentUser)) {
             throw new AccessDeniedException("You don't have access to this picture");
         }
         if (picture.getConfirmedAt() != null) {
@@ -125,9 +125,9 @@ public class UserService extends CrudServiceImpl<User, Integer> {
         return s3Service.getSignedGetUrls(List.of(objectId), currentUser).getFirst();
     }
 
-    public List<URL> getProfilePictures(int userId) {
+    public List<URL> getProfilePictures(String username) {
         var user = userRepository
-            .findById(userId)
+            .findByUsername(username)
             .orElseThrow(() -> new NotFoundException("User not found"));
         return s3Service.getProfilePictures(user);
     }

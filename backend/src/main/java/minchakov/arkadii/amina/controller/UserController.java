@@ -40,9 +40,9 @@ public class UserController {
         return RestResponse.success(users);
     }
 
-    @GetMapping("/{id}/pictures")
-    public RestResponse<List<URL>> getProfilePictures(@PathVariable int id) {
-        return RestResponse.success(userService.getProfilePictures(id));
+    @GetMapping("/{username}/pictures")
+    public RestResponse<List<URL>> getProfilePictures(@PathVariable String username) {
+        return RestResponse.success(userService.getProfilePictures(username));
     }
 
     @PostMapping("/pictures")
