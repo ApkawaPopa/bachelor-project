@@ -25,7 +25,7 @@
       </div>
       <div id="ChatMenuUsers">
         <div v-for="user in users" :key="user.id" class="ChatMenuUser">
-          <p class="ChatMenuUserAvatar"/>
+          <img :src="user.url" class="ChatMenuUserAvatar">
           <p class="ChatMenuUserName">
             {{ user.username }}
           </p>

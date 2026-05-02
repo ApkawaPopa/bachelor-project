@@ -23,5 +23,15 @@ export function useFileDownload() {
         return new Blob([decryptedBuffer], {type: 'application/octet-stream'});
     };
 
-    return {downloadAndDecrypt};
+    const download = async (url) => {
+        const fetchResponse = await fetch(url);
+        if (!fetchResponse.ok) {
+            throw new Error(`Download failed: ${fetchResponse.status}`);
+        }
+        const buf = await fetchResponse.arrayBuffer();
+        const urlBlob = URL.createObjectURL(new Blob([buf], {type: 'application/octet-stream'}));
+        return urlBlob;
+    }
+
+    return {downloadAndDecrypt, download};
 }

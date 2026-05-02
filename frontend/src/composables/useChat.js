@@ -310,6 +310,7 @@ export function useChat() {
         if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
         const chat = chats.value.find(c => c.id === activeChatId.value);
         if (!chat) return;
+        console.log(files)
 
         const fileKeys = [];
         for (const fileItem of files) {

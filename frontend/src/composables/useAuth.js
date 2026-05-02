@@ -3,7 +3,6 @@ import {useCrypto} from './useCrypto';
 import {useStorage} from './useStorage';
 import {useApi} from './useApi';
 
-// Состояние - синглтон
 const isAuthenticated = ref(false);
 const username = ref('');
 const jwtToken = ref('');
@@ -90,6 +89,7 @@ export function useAuth() {
     };
 
     const logout = () => {
+        console.log('Logged out!');
         clearAuth();
         isAuthenticated.value = false;
         username.value = '';
