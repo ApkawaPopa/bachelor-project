@@ -16,7 +16,7 @@ export function useChat() {
     const {get, post, del} = useApi();
     const auth = useAuth();
     const {uploadFile} = useFileUpload();
-    const {downloadAndDecrypt} = useFileDownload();
+    const {downloadAndDecrypt, downloadAndDecryptByUrl} = useFileDownload();
 
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const WS_URL = import.meta.env.VITE_WS_URL;
@@ -72,9 +72,12 @@ export function useChat() {
             if (item.messageContent) {
                 lastMessage = await decryptMessageContent(item.messageContent, symmetricKey);
             }
+            var decryptedUrl = ""
+            if(item.pictureUrls[item.pictureUrls.length - 1])decryptedUrl = URL.createObjectURL(await downloadAndDecryptByUrl(item.pictureUrls[item.pictureUrls.length - 1], symmetricKey));
             loadedChats.push({
                 id: item.id,
                 name: item.name,
+                image: decryptedUrl,
                 lastMessage,
                 symmetricKey,
                 time: getFormattedDate(new Date(item.sortingDate)),

@@ -8,7 +8,8 @@
         class="chat"
         @click="selectChat(chat.id)"
     >
-      <p class="chatAvatar"/>
+      <img v-if="chat.image" :src="chat.image" class="chatAvatar"/>
+      <p v-else class="chatAvatar"/>
       <p class="chatName">{{ chat.name }}</p>
       <p class="chatTimer">{{ chat.time }}</p>
       <p v-if="chat.unreadMessages>0" class="chatMessagesCount">{{ chat.unreadMessages }}</p>

@@ -23,6 +23,16 @@ export function useFileDownload() {
         return new Blob([decryptedBuffer], {type: 'application/octet-stream'});
     };
 
+    const downloadAndDecryptByUrl = async (url, symmetricKey) => {
+        const fetchResponse = await fetch(url);
+        if (!fetchResponse.ok) {
+            throw new Error(`Download failed: ${fetchResponse.status}`);
+        }
+        const encryptedBuffer = await fetchResponse.arrayBuffer();
+        const decryptedBuffer = await decryptFile(encryptedBuffer, symmetricKey);
+        return new Blob([decryptedBuffer], {type: 'application/octet-stream'});
+    };
+
     const download = async (url) => {
         const fetchResponse = await fetch(url);
         if (!fetchResponse.ok) {
@@ -33,5 +43,5 @@ export function useFileDownload() {
         return urlBlob;
     }
 
-    return {downloadAndDecrypt, download};
+    return {downloadAndDecrypt, downloadAndDecryptByUrl, download};
 }

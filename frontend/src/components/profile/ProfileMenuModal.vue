@@ -18,7 +18,8 @@
   <div id="profileMenu" @click="$emit('close')">
     <div id="profile" @click.stop>
       <input ref="profileImg" autocomplete="off" style="display: none" accept="image/*" type="file" @change="onImageSelect"/>
-      <img :src="profileImage[profileImage.length - 1]" id="profilePicture">
+      <img v-if="profileImage.length > 0" :src="profileImage[profileImage.length - 1]" id="profilePicture">
+      <p v-else id="profilePicture"/>
       <p id="profileName">{{ currentUser }}</p>
       <div id="profileButtons">
         <button id="profilePictureSelect" @click="$refs.profileImg.click()">Выбрать фото</button>
@@ -49,7 +50,9 @@
   }
 
   #profilePicture {
+    margin:0;
     color:white;
+    background-color: white;
     font-weight: bold;
     font-family: "Arial";
     margin-top: calc(max(1vh, 1vw) * 2.5);
@@ -90,7 +93,7 @@
     margin-left: calc(max(1vh, 1vw) * 0.5);
     width: calc(max(1vh, 1vw) * 14.25);
     height: calc(max(1vh, 1vw) * 7.5);
-    font-size: calc(max(1vh, 1vw) * 2.5);
+    font-size: calc(max(1vh, 1vw) * 2);
     background-color: black;
     border: 1px solid white;
     color:white;
@@ -105,7 +108,7 @@
     margin-right: calc(max(1vh, 1vw) * 0.5);
     width: calc(max(1vh, 1vw) * 14.25);
     height: calc(max(1vh, 1vw) * 7.5);
-    font-size: calc(max(1vh, 1vw) * 2.5);
+    font-size: calc(max(1vh, 1vw) * 2);
     background-color: black;
     border: 1px solid red;
     color:red;

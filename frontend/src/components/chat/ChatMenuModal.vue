@@ -2,10 +2,15 @@
   <div id="ChatMenu" @click="$emit('close')">
     <div id="ChatMenuBody" @click.stop>
       <div id="ChatMenuHeader">
-        <p id="ChatAvatar"/>
+        <img v-if="chatImage" :src="chatImage" id="ChatAvatar"/>
+        <p v-else id="chatAvatar"/>
         <p id="ChatName">{{ chatName }}</p>
       </div>
-      <button id="ChatMenuDelete" @click="$emit('chat-delete')">Удалить чат?</button>
+      <div id="ChatMenuButtons">
+        <input ref="profileImg" autocomplete="off" style="display: none" accept="image/*" type="file" @change="onImageSelect"/>
+        <button id="ChatMenuPhotoSelect" @click="$refs.profileImg.click()">Выбрать фото</button>
+        <button id="ChatMenuDelete" @click="$emit('chat-delete')">Удалить чат</button>
+      </div>
       <div id="ChatMenuSafe">
         <div id="ChatMenuSafeImage">
           <div v-for="image in imageValues" class="ChatMenuSafeImageRow">
@@ -25,7 +30,8 @@
       </div>
       <div id="ChatMenuUsers">
         <div v-for="user in users" :key="user.id" class="ChatMenuUser">
-          <img :src="user.url" class="ChatMenuUserAvatar">
+          <img v-if="user.url" :src="user.url" class="ChatMenuUserAvatar">
+          <p v-else :src="user.url" class="ChatMenuUserAvatar"/>
           <p class="ChatMenuUserName">
             {{ user.username }}
           </p>
@@ -36,13 +42,22 @@
 </template>
 
 <script setup>
+const emit = defineEmits(['loadChatPicture', 'close']);
+
 const props = defineProps({
   activeChatId: {type: Number, default: -1},
   chatName: {type: String, required: true},
+  chatSymmetricKey: {type: Object, required: true},
   users: {type: Array, required: true},
   stringValues: {type: Array, required: true},
   imageValues: {type: Array, required: true},
+  chatImage: {type: String},
 });
+
+const onImageSelect = (event) => {
+  const image = Array.from(event.target.files)[0];
+  emit('loadChatPicture', image, props.chatSymmetricKey);
+};
 </script>
 
 <style scoped>
@@ -298,17 +313,38 @@ const props = defineProps({
   }
 
   #ChatMenuDelete {
-    width: 30vw;
+    border: 1px solid red;
+    background-color: black;
+    font-weight: bold;
+    width: 47%;
+    height: 100%;
+    font-size: 2vh;
+    font-family: "Arial";
+    color: red;
+    padding: 0;
+    margin: 0;
+    margin-left:6%;
+    float:right;
+  }
+
+  #ChatMenuPhotoSelect {
     border: 1px solid white;
     background-color: black;
     font-weight: bold;
-    height: 2.5vh;
+    width: 47%;
+    height: 100%;
     font-size: 2vh;
     font-family: "Arial";
     color: white;
     padding: 0;
     margin: 0;
-    margin-left: calc(max(1vh, 1vw) * 5 - 5px);
+    float:left;
+  }
+
+  #ChatMenuButtons {
+    width: 30vw;
+    height: 9vh;
+    margin-left: calc(max(1vh, 1vw) * 5);
   }
 
   #ChatMenuSafe {
@@ -316,7 +352,7 @@ const props = defineProps({
     margin-left: calc(max(1vh, 1vw) * 5 - 5px);
     padding: 5px;
     width: 30vw;
-    height: calc(47.5vh - 12px);
+    height: calc(41vh - 12px);
   }
 
   .ChatMenuSafeString {
@@ -347,7 +383,7 @@ const props = defineProps({
   }
 
   #ChatMenuSafeStrings {
-    height: calc(32.5vh - 12px - 15vh);
+    height: calc(25.5vh - 12px - 15vh);
   }
 
   #ChatMenuSafeText {

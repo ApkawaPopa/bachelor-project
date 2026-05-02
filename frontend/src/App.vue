@@ -15,13 +15,15 @@ import {useApi} from "./composables/useApi.js";
 import {useChat} from '@/composables/useChat';
 import {useUsers} from "@/composables/useUsers.js";
 import {useFileDownload} from "@/composables/useFileDownload.js";
+import {useFileUpload} from "@/composables/useFileUpload.js";
 
 const {sha256} = useCrypto();
 const {isAuthenticated, username, restoreSession, login, register, logout} = useAuth();
 const {chats, activeChatId, activeMessages, loadChats, selectChat, sendMessage, deleteMessage, editMessage, createChat, deleteChat, connect} = useChat();
 const {loadUserProfilePicture, getUserKeysByChatId, getUsersByChatId} = useUsers();
-const {get} = useApi();
+const {get, post} = useApi();
 const {download} = useFileDownload();
+const {uploadFile} = useFileUpload();
 
 const isChatCreateOpen = ref(false);
 const isChatMenuOpen = ref(false);
@@ -31,6 +33,7 @@ const users = ref([]);
 const StringValues = ref([]);
 const ImageValues = ref([]);
 const profileImage = ref([]);
+const ChatImage = ref("");
 
 onMounted(async () => {
   const restored = await restoreSession();
@@ -64,6 +67,7 @@ const handleCreateChat = async ({name, participants}) => {
 
 const handleChatMenu = async () => {
   isChatMenuOpen.value = true;
+  if(chats.value.find(c => c.id === activeChatId.value)) ChatImage.value = chats.value.find(c => c.id === activeChatId.value).image;
   users.value = await getUserKeysByChatId(activeChatId.value);
   ImageValues.value = []
   let keys = activeChatId.value.toString()
@@ -118,8 +122,10 @@ const handleChatMenu = async () => {
   const resp = await getUsersByChatId(activeChatId.value);
   for(const item of resp) {
     const {data} = await get(`/api/v1/user/${item.username}/pictures`);
-    const urle = await download(data[data.length-1]);
-    users.value[users.value.findIndex(c => c.username === item.username)].url = urle;
+    if(data.length > 0) {
+      const urle = await download(data[data.length - 1]);
+      users.value[users.value.findIndex(c => c.username === item.username)].url = urle;
+    }
   }
 };
 
@@ -135,6 +141,14 @@ const handleProfileOpen = async () => {
     profileImage.value.push(await download(item));
   }
   isProfileMenuOpen.value = true
+}
+
+const handleLoadChatPic = async (image, symmetricKey) => {
+  const {key} = await uploadFile(image, symmetricKey);
+  const chatImage = await post(`/api/v1/chat/${activeChatId.value}/picture`, key);
+  if (!chatImage) {
+    throw new Error(`Load chat image failed: ${profileImage.status}`);
+  }
 }
 </script>
 
@@ -176,11 +190,14 @@ const handleProfileOpen = async () => {
         v-if="isChatMenuOpen"
         :active-chat-id="activeChatId"
         :chat-name="chats.find(c => c.id === activeChatId)?.name"
+        :chat-symmetric-key="chats.find(c => c.id === activeChatId)?.symmetricKey"
         :users="users"
         :string-values="StringValues"
         :image-values="ImageValues"
+        :chat-image="ChatImage"
         @chat-delete="handleChatDelete"
         @close="isChatMenuOpen = false"
+        @loadChatPicture="handleLoadChatPic"
     />
     <ProfileMenuModal
         :current-user="username"

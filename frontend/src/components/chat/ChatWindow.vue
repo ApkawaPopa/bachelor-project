@@ -11,7 +11,7 @@
         <p id="chatHeaderUserCounter">{{ userCount }} участников</p>
       </div>
     </div>
-    <ul :style="{height:isEditing ? 'calc(95% - 5.5vh - 2px - 5vh - 1px)':'calc(95% - 5.5vh - 2px)'}" class="messages">
+    <ul :style="{height:isEditing ? 'calc(95% - 6.5vh - 2px - 5vh - 1px)':'calc(95% - 6.5vh - 2px)'}" class="messages">
       <li v-for="message in messages"
           :key="message.id"
           :class="{ messageUs: message.sender === currentUser }"
@@ -557,7 +557,7 @@ document.addEventListener("click", () => {
 
   #chatHeader {
     margin: 0;
-    height: 5vh;
+    height: 6vh;
     border-bottom: 1px solid white;
   }
 
@@ -565,7 +565,7 @@ document.addEventListener("click", () => {
     padding: 0;
     border: 0;
     margin-left: 1vw;
-    height: 5vh;
+    height: 100%;
     width: 4vh;
     background-color: black;
     color: white;
@@ -578,28 +578,28 @@ document.addEventListener("click", () => {
   #chatHeaderController {
     float: right;
     width: calc(74vw - 5vh);
-    height: 5vh;
+    height: 100%;
   }
 
   #chatHeaderName {
-    height: 2.5vh;
+    height: 50%;
     margin: 0;
     margin-top: 0.25vh;
     color: white;
     font-weight: bold;
-    font-size: 2.25vh;
+    font-size: 150%;
     font-family: "Arial";
     text-align: center;
   }
 
   #chatHeaderUserCounter {
-    height: 1.5vh;
+    height: 30%;
     margin: 0;
     width: calc(74vw - 5vh);
     margin-top: 0.75vh;
     color: white;
     font-weight: bold;
-    font-size: 1.25vh;
+    font-size: 100%;
     font-family: "Arial";
     text-align: center;
   }
