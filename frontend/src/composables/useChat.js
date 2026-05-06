@@ -83,7 +83,8 @@ export function useChat() {
                 time: getFormattedDate(new Date(item.sortingDate)),
                 invitedAt: new Date(item.invitedAt),
                 unreadMessages: item.unreadMessagesCount,
-                userCount: item.userCount
+                userCount: item.userCount,
+                pictureUrls: item.pictureUrls,
             });
         }
         chats.value = loadedChats;

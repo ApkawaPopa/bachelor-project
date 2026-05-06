@@ -1,10 +1,11 @@
 <script setup>
-  import {ref} from 'vue';
-  const props = defineProps({
+import {ref} from 'vue';
+
+const props = defineProps({
     currentUser: {type: String, required: true},
     profileImage: {type: Array, required: true},
   });
-  const emit = defineEmits(['loadProfilePicture', 'close', 'quitProfile']);
+  const emit = defineEmits(['loadProfilePicture', 'close', 'quitProfile', 'openGallery']);
 
   const profileImg = ref(null);
 
@@ -18,7 +19,8 @@
   <div id="profileMenu" @click="$emit('close')">
     <div id="profile" @click.stop>
       <input ref="profileImg" autocomplete="off" style="display: none" accept="image/*" type="file" @change="onImageSelect"/>
-      <img v-if="profileImage.length > 0" :src="profileImage[profileImage.length - 1]" id="profilePicture">
+      <img v-if="profileImage.length > 0" id="profilePicture"
+           :src="profileImage[profileImage.length - 1]" @click="$emit('openGallery')">
       <p v-else id="profilePicture"/>
       <p id="profileName">{{ currentUser }}</p>
       <div id="profileButtons">

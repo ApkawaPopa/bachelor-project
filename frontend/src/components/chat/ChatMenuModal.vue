@@ -2,12 +2,14 @@
   <div id="ChatMenu" @click="$emit('close')">
     <div id="ChatMenuBody" @click.stop>
       <div id="ChatMenuHeader">
-        <img v-if="chatImage" :src="chatImage" id="ChatAvatar"/>
+        <img v-if="chatImages.length" id="ChatAvatar"
+             :src="chatImages[chatImages.length - 1]" @click="$emit('openChatGallery')">
         <p v-else id="chatAvatar"/>
         <p id="ChatName">{{ chatName }}</p>
       </div>
       <div id="ChatMenuButtons">
-        <input ref="profileImg" autocomplete="off" style="display: none" accept="image/*" type="file" @change="onImageSelect"/>
+        <input ref="profileImg" accept="image/*" autocomplete="off" style="display: none" type="file"
+               @change="onImageSelect"/>
         <button id="ChatMenuPhotoSelect" @click="$refs.profileImg.click()">Выбрать фото</button>
         <button id="ChatMenuDelete" @click="$emit('chat-delete')">Удалить чат</button>
       </div>
@@ -29,12 +31,11 @@
           участников, чат полностью приватен.</p>
       </div>
       <div id="ChatMenuUsers">
-        <div v-for="user in users" :key="user.id" class="ChatMenuUser">
+        <div v-for="user in users" :key="user.id" class="ChatMenuUser"
+             @click.stop="$emit('openUserProfile', user.username)">
           <img v-if="user.url" :src="user.url" class="ChatMenuUserAvatar">
-          <p v-else :src="user.url" class="ChatMenuUserAvatar"/>
-          <p class="ChatMenuUserName">
-            {{ user.username }}
-          </p>
+          <p v-else class="ChatMenuUserAvatar"/>
+          <p class="ChatMenuUserName">{{ user.username }}</p>
         </div>
       </div>
     </div>
@@ -42,7 +43,7 @@
 </template>
 
 <script setup>
-const emit = defineEmits(['loadChatPicture', 'close']);
+const emit = defineEmits(['loadChatPicture', 'close', 'chat-delete', 'openChatGallery', 'openUserProfile']);
 
 const props = defineProps({
   activeChatId: {type: Number, default: -1},
@@ -51,7 +52,7 @@ const props = defineProps({
   users: {type: Array, required: true},
   stringValues: {type: Array, required: true},
   imageValues: {type: Array, required: true},
-  chatImage: {type: String},
+  chatImages: {type: Array, default: () => []},
 });
 
 const onImageSelect = (event) => {
@@ -323,8 +324,8 @@ const onImageSelect = (event) => {
     color: red;
     padding: 0;
     margin: 0;
-    margin-left:6%;
-    float:right;
+    margin-left: 6%;
+    float: right;
   }
 
   #ChatMenuPhotoSelect {
@@ -338,7 +339,7 @@ const onImageSelect = (event) => {
     color: white;
     padding: 0;
     margin: 0;
-    float:left;
+    float: left;
   }
 
   #ChatMenuButtons {
