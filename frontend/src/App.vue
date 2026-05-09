@@ -1,5 +1,5 @@
 <script setup>
-import {onMounted, ref} from 'vue';
+import {computed, onMounted, ref} from 'vue';
 
 import AuthForm from '@/components/auth/AuthForm.vue';
 
@@ -31,7 +31,9 @@ const {
   editMessage,
   createChat,
   deleteChat,
-  connect
+  connect,
+  getChatImages,
+  resetAll: chatResetAll,
 } = useChat();
 const {loadUserProfilePicture, getUserKeysByChatId, getUsersByChatId} = useUsers();
 const {get, post} = useApi();
@@ -42,7 +44,6 @@ const showGallery = ref(false);
 const galleryImages = ref([]);
 const galleryInitialIndex = ref(0);
 const selectedProfileUsername = ref('');
-const chatImages = ref([]);
 
 const openGallery = (images, index = 0) => {
   galleryImages.value = images;
@@ -57,6 +58,13 @@ const isProfileMenuOpen = ref(false);
 const users = ref([]);
 const StringValues = ref([]);
 const ImageValues = ref([]);
+
+const profileModalKey = ref(0);
+
+const activeChatImages = computed(() => {
+  if (activeChatId.value === -1) return [];
+  return getChatImages(activeChatId.value);
+});
 
 onMounted(async () => {
   const restored = await restoreSession();
@@ -89,23 +97,6 @@ const handleCreateChat = async ({name, participants}) => {
 
 const handleChatMenu = async () => {
   isChatMenuOpen.value = true;
-  const chat = chats.value.find(c => c.id === activeChatId.value);
-  if (chat) {
-    if (chat.pictureUrls) {
-      const images = [];
-      for (const picUrl of chat.pictureUrls) {
-        try {
-          const blob = await downloadAndDecryptByUrl(picUrl, chat.symmetricKey);
-          images.push(URL.createObjectURL(blob));
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      chatImages.value = images;
-    } else {
-      chatImages.value = [];
-    }
-  }
   users.value = await getUserKeysByChatId(activeChatId.value);
   ImageValues.value = [];
   let keys = activeChatId.value.toString();
@@ -188,7 +179,23 @@ const handleUserProfileOpen = (usernameParam) => {
 };
 
 const handleUploadProfilePicture = async (image) => {
-  await loadUserProfilePicture(image);
+  try {
+    const newPictureUrl = await loadUserProfilePicture(image);
+    const response = await fetch(newPictureUrl);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    profileModalKey.value++;
+
+    if (isChatMenuOpen.value && users.value) {
+      const currentUserEntry = users.value.find(u => u.username === username.value);
+      if (currentUserEntry) {
+        currentUserEntry.url = blobUrl;
+      }
+    }
+  } catch (err) {
+    console.error('Upload profile picture failed', err);
+  }
 };
 
 const handleLoadChatPic = async (image, symmetricKey) => {
@@ -197,6 +204,24 @@ const handleLoadChatPic = async (image, symmetricKey) => {
   if (!chatImage) {
     throw new Error(`Load chat image failed`);
   }
+};
+
+const performLogout = async () => {
+  showGallery.value = false;
+  galleryImages.value = [];
+  galleryInitialIndex.value = 0;
+  selectedProfileUsername.value = '';
+  isChatCreateOpen.value = false;
+  isChatMenuOpen.value = false;
+  isProfileMenuOpen.value = false;
+  users.value = [];
+  StringValues.value = [];
+  ImageValues.value = [];
+  profileModalKey.value = 0;
+
+  await chatResetAll();
+
+  logout();
 };
 </script>
 
@@ -242,23 +267,22 @@ const handleLoadChatPic = async (image, symmetricKey) => {
         :users="users"
         :string-values="StringValues"
         :image-values="ImageValues"
-        :chat-images="chatImages"
+        :chat-images="activeChatImages"
         @chat-delete="handleChatDelete"
         @close="isChatMenuOpen = false"
         @loadChatPicture="handleLoadChatPic"
-        @openChatGallery="openGallery(chatImages, chatImages.length - 1)"
+        @openChatGallery="openGallery(activeChatImages, activeChatImages.length - 1)"
         @openUserProfile="handleUserProfileOpen"
     />
-    <!-- Собственный профиль -->
     <ProfileModal
+        :key="profileModalKey"
         :editable="true"
         :onUploadPicture="handleUploadProfilePicture"
         :username="selectedProfileUsername"
         :visible="isProfileMenuOpen && selectedProfileUsername === username"
         @close="handleCloseProfile"
-        @quitProfile="logout"
+        @quitProfile="performLogout"
     />
-    <!-- Чужой профиль -->
     <ProfileModal
         :editable="false"
         :username="selectedProfileUsername"

@@ -121,7 +121,7 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             var topicChatStr = "/topic/chat/";
                             if (destination.startsWith(topicChatStr)) {
-                                for (var endingStr : List.of("/received", "/edited", "/deleted")) {
+                                for (var endingStr : List.of("/received", "/edited", "/deleted", "/picture")) {
                                     if (destination.endsWith(endingStr)) {
                                         destination = destination.substring(
                                             0,

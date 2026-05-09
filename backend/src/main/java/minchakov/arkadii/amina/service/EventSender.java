@@ -1,23 +1,22 @@
-package minchakov.arkadii.amina.util;
+package minchakov.arkadii.amina.service;
 
 import minchakov.arkadii.amina.dto.AddChatDTO;
 import minchakov.arkadii.amina.dto.ChatCreationEvent;
 import minchakov.arkadii.amina.dto.ChatDeletionEvent;
 import minchakov.arkadii.amina.dto.ChatMessageEvent;
+import minchakov.arkadii.amina.dto.ChatPictureChangedEvent;
 import minchakov.arkadii.amina.dto.StompResponse;
 import minchakov.arkadii.amina.dto.UnreadMessagesCountDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.repository.ChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
-import minchakov.arkadii.amina.service.S3Service;
-import minchakov.arkadii.amina.service.UserService;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
-@Component
-public class ChatEventPublisher {
+@Service
+public class EventSender {
 
     private final ChatRepository chatRepository;
     private final SimpMessagingTemplate simpMessagingTemplate;
@@ -25,7 +24,7 @@ public class ChatEventPublisher {
     private final UserRepository userRepository;
     private final S3Service s3Service;
 
-    public ChatEventPublisher(
+    public EventSender(
         ChatRepository chatRepository,
         SimpMessagingTemplate simpMessagingTemplate,
         UserService userService,
@@ -109,4 +108,11 @@ public class ChatEventPublisher {
         }
     }
 
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void sendChatPictureChanged(ChatPictureChangedEvent event) {
+        simpMessagingTemplate.convertAndSend(
+            "/topic/chat/" + event.chatId() + "/picture",
+            StompResponse.success(event.pictureUrl())
+        );
+    }
 }

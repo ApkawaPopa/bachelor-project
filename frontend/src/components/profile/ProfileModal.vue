@@ -1,4 +1,3 @@
-<!-- frontend/src/components/profile/ProfileModal.vue -->
 <template>
   <div v-if="visible" class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
@@ -43,7 +42,6 @@ const props = defineProps({
   username: {type: String, required: true},
   visible: {type: Boolean, default: false},
   editable: {type: Boolean, default: false},
-  // колбэк для загрузки нового фото (только при editable)
   onUploadPicture: {type: Function, default: null}
 });
 
@@ -93,7 +91,7 @@ watch(() => props.visible, (newVal) => {
     showCarousel.value = false;
     loadProfilePictures();
   }
-});
+}, {immediate: true});
 </script>
 
 <style scoped>

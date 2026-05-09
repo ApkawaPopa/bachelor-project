@@ -27,6 +27,12 @@ export function useChat() {
     const connectionStatus = ref('disconnected');
     const stompClient = ref(null);
 
+    const chatDecryptedImages = ref(new Map());
+
+    const reconnectTimeout = ref(null);
+
+    let deactivated = false;
+
     const activeMessages = computed(() => chatMessages.value.get(activeChatId.value) || []);
 
     function getTextDate(data) {
@@ -39,27 +45,36 @@ export function useChat() {
 
     function getFormattedDate(chatLastActionDate) {
         const currentData = new Date();
-
         if (currentData.getFullYear() === chatLastActionDate.getFullYear() &&
             currentData.getMonth() === chatLastActionDate.getMonth() &&
             currentData.getDate() === chatLastActionDate.getDate()) {
             return getTextDate(chatLastActionDate)
         }
-
         if (currentData.getFullYear() === chatLastActionDate.getFullYear() &&
             currentData.getMonth() === chatLastActionDate.getMonth() &&
             currentData.getDate() - chatLastActionDate.getDate() < 8) {
             const DayOfWeek = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"]
             return DayOfWeek[chatLastActionDate.getDay()];
         }
-
         if (currentData.getFullYear() === chatLastActionDate.getFullYear()) {
             const Month = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"]
             return chatLastActionDate.getDate().toString() + " " + Month[chatLastActionDate.getMonth()];
         }
-
         return chatLastActionDate.getDate().toString() + "." + chatLastActionDate.getMonth().toString() + "." + chatLastActionDate.getFullYear().toString()[2] + chatLastActionDate.getFullYear().toString()[3];
     }
+
+    const decryptImageUrls = async (urls, symmetricKey) => {
+        const images = [];
+        for (const url of urls) {
+            try {
+                const blob = await downloadAndDecryptByUrl(url, symmetricKey);
+                images.push(URL.createObjectURL(blob));
+            } catch (e) {
+                console.error('Failed to decrypt chat image', e);
+            }
+        }
+        return images;
+    };
 
     const loadChats = async () => {
         const data = await get('/api/v1/user/chats');
@@ -72,12 +87,14 @@ export function useChat() {
             if (item.messageContent) {
                 lastMessage = await decryptMessageContent(item.messageContent, symmetricKey);
             }
-            var decryptedUrl = ""
-            if(item.pictureUrls[item.pictureUrls.length - 1])decryptedUrl = URL.createObjectURL(await downloadAndDecryptByUrl(item.pictureUrls[item.pictureUrls.length - 1], symmetricKey));
+
+            const decryptedImages = await decryptImageUrls(item.pictureUrls, symmetricKey);
+            chatDecryptedImages.value.set(item.id, decryptedImages);
+
             loadedChats.push({
                 id: item.id,
                 name: item.name,
-                image: decryptedUrl,
+                image: decryptedImages.length > 0 ? decryptedImages[decryptedImages.length - 1] : '',
                 lastMessage,
                 symmetricKey,
                 time: getFormattedDate(new Date(item.sortingDate)),
@@ -97,9 +114,7 @@ export function useChat() {
         const messages = [];
         for (const item of data.data) {
             const decryptedContent = await decryptMessageContent(item.content, chat.symmetricKey);
-
             let date = getTextDate(new Date(item.createdAt))
-
             const fileKeysWithNames = [];
             const imgs = [];
             if (item.fileKeys && item.fileKeys.length) {
@@ -109,14 +124,9 @@ export function useChat() {
                         if (decryptedName.endsWith(".jpg") || decryptedName.endsWith(".png")) {
                             const blob = await downloadAndDecrypt(fk.fileKey, chat.symmetricKey);
                             const url = URL.createObjectURL(blob);
-                            imgs.push({
-                                url: url
-                            });
+                            imgs.push({url: url});
                         } else {
-                            fileKeysWithNames.push({
-                                fileKey: fk.fileKey,
-                                filename: decryptedName
-                            });
+                            fileKeysWithNames.push({fileKey: fk.fileKey, filename: decryptedName});
                         }
                     } catch (err) {
                         console.log("Catch error while loading chat[" + chatId.toString() + "], message[" + item.id.toString() + "] with content:" + decryptedContent, err)
@@ -142,9 +152,7 @@ export function useChat() {
         stompClient.value.subscribe(`/topic/chat/${chatId}`, async (message) => {
             const {data} = JSON.parse(message.body);
             const decryptedContent = await decryptMessageContent(data.content, symmetricKey);
-
             const date = getTextDate(new Date(data.createdAt));
-
             const fileKeysWithNames = [];
             const imgs = [];
             if (data.fileKeys && data.fileKeys.length) {
@@ -153,14 +161,9 @@ export function useChat() {
                     if (decryptedName.endsWith(".jpg") || decryptedName.endsWith(".png")) {
                         const blob = await downloadAndDecrypt(fk.fileKey, symmetricKey);
                         const url = URL.createObjectURL(blob);
-                        imgs.push({
-                            url: url
-                        });
+                        imgs.push({url: url});
                     } else {
-                        fileKeysWithNames.push({
-                            fileKey: fk.fileKey,
-                            filename: decryptedName
-                        });
+                        fileKeysWithNames.push({fileKey: fk.fileKey, filename: decryptedName});
                     }
                 }
             }
@@ -173,13 +176,11 @@ export function useChat() {
                 time: date,
                 createdAt: new Date(data.createdAt)
             };
-
             const messages = chatMessages.value.get(chatId);
             if (messages) {
                 messages.push(newMessage);
                 chatMessages.value.set(chatId, messages);
             }
-
             const chatIdx = chats.value.findIndex(c => c.id === chatId);
             if (chatIdx !== -1) {
                 chats.value[chatIdx].time = getFormattedDate(newMessage.createdAt);
@@ -187,7 +188,6 @@ export function useChat() {
                 const [chat] = chats.value.splice(chatIdx, 1);
                 chats.value.unshift(chat);
             }
-
             if (chatId === activeChatId.value) {
                 stompClient.value.publish({
                     destination: `/app/chat/${chatId}/message/${data.id}/receive`,
@@ -244,6 +244,24 @@ export function useChat() {
             const chat = chats.value[chats.value.findIndex(c => c.id == data.chatId)];
             if (chat) {
                 chat.unreadMessages = data.unreadMessagesCount;
+            }
+        });
+
+        stompClient.value.subscribe(`/topic/chat/${chatId}/picture`, async (message) => {
+            const {data} = JSON.parse(message.body);
+            const chat = chats.value.find(c => c.id === chatId);
+            if (!chat) return;
+            try {
+                const blob = await downloadAndDecryptByUrl(data, symmetricKey);
+                const blobUrl = URL.createObjectURL(blob);
+
+                const images = chatDecryptedImages.value.get(chatId) || [];
+                images.push(blobUrl);
+                chatDecryptedImages.value.set(chatId, images);
+
+                chat.image = blobUrl;
+            } catch (e) {
+                console.error('Failed to handle chat picture update', e);
             }
         });
     };
@@ -304,7 +322,12 @@ export function useChat() {
         stompClient.value.onWebSocketClose = () => {
             connectionStatus.value = 'disconnected';
             console.log('WebSocket closed, reconnecting in 5s');
-            setTimeout(() => connect(), 5000);
+            if (reconnectTimeout.value) {
+                clearTimeout(reconnectTimeout.value);
+            }
+            if (!deactivated) {
+                reconnectTimeout.value = setTimeout(() => connect(), 5000);
+            }
         };
 
         stompClient.value.activate();
@@ -323,7 +346,7 @@ export function useChat() {
                 fileKeys.push(key);
             } catch (err) {
                 console.error('File upload failed', err);
-                throw err; // прерываем отправку
+                throw err;
             }
         }
 
@@ -397,14 +420,38 @@ export function useChat() {
 
     const deleteChat = async (chatId) => {
         const data = await del(`/api/v1/chat/${chatId}`);
+        chatDecryptedImages.value.delete(chatId);
         console.log('Chat deleted', data);
     }
 
-    onUnmounted(() => {
-        if (stompClient.value) {
-            stompClient.value.deactivate();
+    const resetAll = async () => {
+        deactivated = true; // запрещаем переподключение
+
+        if (reconnectTimeout.value) {
+            clearTimeout(reconnectTimeout.value);
+            reconnectTimeout.value = null;
         }
+
+        if (stompClient.value) {
+            await stompClient.value.deactivate();
+            stompClient.value = null;
+        }
+
+        chats.value = [];
+        activeChatId.value = -1;
+        chatMessages.value = new Map();
+        chatDecryptedImages.value = new Map();
+        connectionStatus.value = 'disconnected';
+        deactivated = false;
+    };
+
+    onUnmounted(() => {
+        resetAll();
     });
+
+    const getChatImages = (chatId) => {
+        return chatDecryptedImages.value.get(chatId) || [];
+    };
 
     return {
         chats,
@@ -420,5 +467,7 @@ export function useChat() {
         createChat,
         deleteChat,
         connect,
+        getChatImages,
+        resetAll,
     };
 }

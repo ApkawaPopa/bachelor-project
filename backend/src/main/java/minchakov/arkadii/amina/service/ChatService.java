@@ -3,6 +3,7 @@ package minchakov.arkadii.amina.service;
 import minchakov.arkadii.amina.dto.ChatCreateDTO;
 import minchakov.arkadii.amina.dto.ChatCreationEvent;
 import minchakov.arkadii.amina.dto.ChatDeletionEvent;
+import minchakov.arkadii.amina.dto.ChatPictureChangedEvent;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.model.Chat;
 import minchakov.arkadii.amina.model.User;
@@ -161,6 +162,8 @@ public class ChatService {
         picture.setConfirmedAt(LocalDateTime.now());
         s3ObjectRepository.save(picture);
 
-        return s3Service.getSignedGetUrls(List.of(objectId), currentUser).getFirst();
+        URL pictureUrl = s3Service.getSignedGetUrls(List.of(objectId), currentUser).getFirst();
+        applicationEventPublisher.publishEvent(new ChatPictureChangedEvent(chatId, pictureUrl));
+        return pictureUrl;
     }
 }

@@ -1,6 +1,5 @@
 import {ref} from 'vue';
 import {useApi} from './useApi';
-import {useAuth} from "@/composables/useAuth.js";
 
 const users = ref([]);
 
@@ -33,9 +32,10 @@ export function useUsers() {
             throw new Error(`Upload failed: ${uploadResponse.status}`);
         }
         const profileImage = await post(`/api/v1/user/pictures`, key);
-        if (!profileImage) {
-            throw new Error(`Load profile image failed: ${profileImage.status}`);
+        if (!profileImage || !profileImage.data) {
+            throw new Error(`Set profile picture failed`);
         }
+        return profileImage.data;
     }
 
     return {getUsersByChatId, getUserKeysByChatId, loadUserProfilePicture};
