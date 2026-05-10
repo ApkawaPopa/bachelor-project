@@ -39,6 +39,8 @@ const selectChat = (chatId) => {
 
 <style scoped>
 .profile-btn {
+  border-radius: 0;
+  border: none;
   border-bottom: 1px solid var(--color-border);
   padding: var(--space-3);
   width: 100%;

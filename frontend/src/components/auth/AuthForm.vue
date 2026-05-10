@@ -9,7 +9,7 @@
     <form v-if="isLoginMode" class="auth-form__fields" @submit.prevent="handleLogin">
       <input v-model="loginForm.username" class="input" placeholder="Логин" required/>
       <input v-model="loginForm.password" class="input" placeholder="Пароль" required type="password"/>
-      <button class="btn" type="submit">Войти</button>
+      <button class="btn btn--primary" type="submit">Войти</button>
     </form>
 
     <form v-else class="auth-form__fields" @submit.prevent="handleRegister">
@@ -18,7 +18,7 @@
              @input="checkPasswordsMatch"/>
       <input v-model="registerForm.passwordConfirm" class="input" placeholder="Подтвердите пароль" type="password"
              @input="checkPasswordsMatch"/>
-      <button :disabled="!passwordsMatch" class="btn" type="submit">Зарегистрироваться</button>
+      <button :disabled="!passwordsMatch" class="btn btn--primary" type="submit">Зарегистрироваться</button>
     </form>
   </div>
 </template>

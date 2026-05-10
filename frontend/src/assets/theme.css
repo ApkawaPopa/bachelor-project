@@ -176,13 +176,11 @@ html, body {
     height: 3rem;
     border-radius: var(--radius-full);
     background: var(--color-text);
-    border: 1px solid var(--color-border);
     object-fit: cover;
 }
 
 .avatar--placeholder {
     background: var(--color-text);
-    border: 1px solid var(--color-border);
 }
 
 /* Chat list item */
