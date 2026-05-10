@@ -120,6 +120,7 @@ html, body {
     border-radius: var(--radius-sm);
     outline: none;
     transition: border-color var(--transition-fast);
+    line-height: 1.2;
 }
 
 .input::placeholder {

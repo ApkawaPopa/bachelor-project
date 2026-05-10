@@ -360,6 +360,9 @@ const performLogout = async () => {
   .sidebar {
     width: 100%;
     border-right: none;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .sidebar--hidden {
@@ -369,6 +372,7 @@ const performLogout = async () => {
   .chat-area {
     width: 100%;
     flex: 1;
+    min-height: 0;
   }
 }
 </style>
