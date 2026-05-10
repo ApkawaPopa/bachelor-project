@@ -2,9 +2,9 @@
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
       <div class="chat-menu__header">
-        <img v-if="chatImages.length" :src="chatImages[chatImages.length-1]" class="profile-avatar"
+        <img v-if="chatImages.length" :src="chatImages[chatImages.length-1]" class="avatar avatar--profile"
              @click="$emit('openChatGallery')"/>
-        <div v-else class="avatar avatar--placeholder profile-avatar"></div>
+        <div v-else class="avatar avatar--placeholder avatar--profile"></div>
         <h3>{{ chatName }}</h3>
       </div>
 
@@ -72,14 +72,5 @@ const onImageSelect = (event) => {
   gap: var(--space-2);
   padding: var(--space-1) 0;
   cursor: pointer;
-}
-
-.profile-avatar {
-  width: 8rem;
-  height: 8rem;
-  margin: 0 auto;
-  cursor: pointer;
-  border-radius: var(--radius-full);
-  object-fit: cover;
 }
 </style>

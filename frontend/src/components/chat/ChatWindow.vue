@@ -241,13 +241,6 @@ document.addEventListener("click", () => {
   gap: var(--space-2);
 }
 
-.file-preview__item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-size-xs);
-}
-
 .chat-input {
   display: flex;
   align-items: center;

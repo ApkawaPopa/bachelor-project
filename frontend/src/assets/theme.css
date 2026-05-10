@@ -336,3 +336,66 @@ html, body {
     color: var(--color-text);
     font-size: var(--font-size-sm);
 }
+
+/* ====== ADDED: Chat list item details ====== */
+.chat-item__info {
+    flex: 1;
+    margin-left: var(--space-3);
+    min-width: 0;
+}
+
+.chat-item__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: var(--font-size-sm);
+}
+
+.chat-item__name {
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.chat-item__time {
+    font-size: var(--font-size-xs);
+    opacity: 0.7;
+    margin-left: var(--space-2);
+}
+
+.chat-item__footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--space-1);
+}
+
+.chat-item__message {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+}
+
+.chat-item__unread {
+    background: var(--color-text);
+    color: var(--color-text-inverse);
+    border-radius: var(--radius-full);
+    padding: 0 var(--space-1);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
+    min-width: 1.5em;
+    text-align: center;
+}
+
+/* ====== ADDED: Avatar modifier for profile ====== */
+.avatar--profile {
+    width: 8rem;
+    height: 8rem;
+    margin: 0 auto;
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    object-fit: cover;
+}
