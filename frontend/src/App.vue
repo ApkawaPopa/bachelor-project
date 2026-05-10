@@ -1,5 +1,5 @@
 <script setup>
-import {computed, onMounted, ref} from 'vue';
+import {computed, onMounted, onUnmounted, ref} from 'vue';
 
 import AuthForm from '@/components/auth/AuthForm.vue';
 
@@ -66,12 +66,24 @@ const activeChatImages = computed(() => {
   return getChatImages(activeChatId.value);
 });
 
+const windowWidth = ref(window.innerWidth);
+const isMobile = computed(() => windowWidth.value < 768);
+
+const onResize = () => {
+  windowWidth.value = window.innerWidth;
+};
+
 onMounted(async () => {
+  window.addEventListener('resize', onResize);
   const restored = await restoreSession();
   if (restored) {
     await loadChats();
     await connect();
   }
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', onResize);
 });
 
 const handleLogin = async (user, pass) => {
@@ -226,11 +238,11 @@ const performLogout = async () => {
 </script>
 
 <template>
-  <div v-if="!isAuthenticated" id="autorazeBlocker">
+  <div v-if="!isAuthenticated" class="auth-screen">
     <AuthForm @login="handleLogin" @register="handleRegister"/>
   </div>
-  <div v-else id="ForChats">
-    <div id="sideMenu">
+  <div v-else class="app-layout">
+    <div :class="{ 'sidebar--hidden': isMobile && activeChatId !== -1 }" class="sidebar">
       <ChatList
           :active-chat-id="activeChatId"
           :chats="chats"
@@ -239,20 +251,22 @@ const performLogout = async () => {
           @open-profile="handleProfileOpen"
       />
     </div>
-    <ChatWindow
-        v-if="activeChatId !== -1"
-        :active-chat-id="activeChatId"
-        :chat-name="chats.find(c => c.id === activeChatId)?.name"
-        :chat-symmetric-key="chats.find(c => c.id === activeChatId)?.symmetricKey"
-        :current-user="username"
-        :messages="activeMessages"
-        :userCount="chats.find(c => c.id === activeChatId)?.userCount"
-        @send-message="sendMessage"
-        @delete-message="deleteMessage"
-        @edit-message="editMessage"
-        @leave-chat="activeChatId = -1"
-        @open-chat-menu="handleChatMenu"
-    />
+    <div v-if="!isMobile || activeChatId !== -1" class="chat-area">
+      <ChatWindow v-if="activeChatId !== -1"
+                  :active-chat-id="activeChatId"
+                  :chat-name="chats.find(c => c.id === activeChatId)?.name"
+                  :chat-symmetric-key="chats.find(c => c.id === activeChatId)?.symmetricKey"
+                  :current-user="username"
+                  :messages="activeMessages"
+                  :userCount="chats.find(c => c.id === activeChatId)?.userCount"
+                  @send-message="sendMessage"
+                  @delete-message="deleteMessage"
+                  @edit-message="editMessage"
+                  @leave-chat="activeChatId = -1"
+                  @open-chat-menu="handleChatMenu"
+      />
+      <div v-else class="empty-state">Выберите чат</div>
+    </div>
     <AddChatModal
         v-if="isChatCreateOpen"
         :current-user="username"
@@ -298,28 +312,63 @@ const performLogout = async () => {
   </div>
 </template>
 
-<style>
-#autorazeBlocker {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: black;
+<style scoped>
+.app-layout {
+  display: flex;
+  height: 100dvh;
+  background: var(--color-bg);
+  overflow: hidden;
 }
 
-#ForChats {
-  background-color: rgb(0, 0, 0);
-  width: 100vw;
-  min-height: 100vh;
-  height: auto;
-  overflow: auto;
+.sidebar {
+  width: 300px;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  background: var(--color-bg);
 }
 
-#sideMenu {
-  width: calc(max(1vh, 1vw) * 25);
-  height: 100vh;
-  float: left;
-  border-right: 1px solid white;
+.chat-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* чтобы не переполнялся */
+}
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-lg);
+  opacity: 0.6;
+}
+
+.auth-screen {
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg);
+}
+
+@media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: none;
+  }
+
+  .sidebar--hidden {
+    display: none;
+  }
+
+  .chat-area {
+    width: 100%;
+    flex: 1;
+  }
 }
 </style>

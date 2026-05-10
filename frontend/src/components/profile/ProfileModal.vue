@@ -1,26 +1,14 @@
 <template>
   <div v-if="visible" class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
-      <input
-          v-if="editable"
-          ref="fileInput"
-          accept="image/*"
-          autocomplete="off"
-          style="display: none"
-          type="file"
-          @change="onFileSelected"
-      />
-      <img
-          v-if="profileImages.length"
-          :src="profileImages[profileImages.length - 1]"
-          class="avatar"
-          @click="openGallery"
-      />
-      <p v-else class="avatar-placeholder" @click="openGallery"></p>
-      <p class="username">{{ username }}</p>
-      <div v-if="editable" class="buttons">
-        <button class="button primary" @click="$refs.fileInput.click()">Выбрать фото</button>
-        <button class="button danger" @click="$emit('quitProfile')">Выйти</button>
+      <input v-if="editable" ref="fileInput" accept="image/*" hidden type="file" @change="onFileSelected"/>
+      <img v-if="profileImages.length" :src="profileImages[profileImages.length-1]" class="avatar profile-avatar"
+           @click="openGallery"/>
+      <div v-else class="avatar avatar--placeholder profile-avatar"></div>
+      <h3>{{ username }}</h3>
+      <div v-if="editable" class="profile-actions">
+        <button class="btn" @click="$refs.fileInput.click()">Выбрать фото</button>
+        <button class="btn btn--danger" @click="$emit('quitProfile')">Выйти</button>
       </div>
     </div>
     <ImageCarouselModal
@@ -95,89 +83,17 @@ watch(() => props.visible, (newVal) => {
 </script>
 
 <style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background-color: rgba(50, 50, 50, 50%);
+.profile-avatar {
+  width: 8rem;
+  height: 8rem;
+  margin: 0 auto;
+  cursor: pointer;
+}
+
+.profile-actions {
   display: flex;
-  align-items: center;
+  gap: var(--space-2);
   justify-content: center;
-  z-index: 500;
-}
-
-.modal-content {
-  border: 1px solid white;
-  width: calc(max(1vh, 1vw) * 30);
-  height: calc(max(1vh, 1vw) * 45);
-  background-color: black;
-  text-align: center;
-}
-
-.avatar {
-  display: block;
-  margin: calc(max(1vh, 1vw) * 2.5) auto 0;
-  background-color: white;
-  height: calc(max(1vh, 1vw) * 12.5);
-  width: calc(max(1vh, 1vw) * 12.5);
-  border-radius: 100%;
-  border: 1px solid white;
-  cursor: pointer;
-  font-weight: bold;
-  font-family: "Arial";
-}
-
-.avatar-placeholder {
-  display: block;
-  margin: calc(max(1vh, 1vw) * 2.5) auto 0;
-  background-color: white;
-  height: calc(max(1vh, 1vw) * 12.5);
-  width: calc(max(1vh, 1vw) * 12.5);
-  border-radius: 100%;
-  border: 1px solid white;
-  cursor: pointer;
-}
-
-.username {
-  margin: 0;
-  height: calc(max(1vh, 1vw) * 3);
-  font-size: calc(max(1vh, 1vw) * 2.5);
-  font-weight: bold;
-  font-family: "Arial";
-  text-align: center;
-  color: white;
-}
-
-.buttons {
-  margin-top: calc(max(1vh, 1vw) * 18.75);
-  width: calc(max(1vh, 1vw) * 30);
-  height: calc(max(1vh, 1vw) * 7.5);
-}
-
-.button {
-  font-weight: bold;
-  font-family: "Arial";
-  font-size: calc(max(1vh, 1vw) * 2);
-  padding: 0;
-  height: 100%;
-  width: calc(max(1vh, 1vw) * 14.25);
-  border: 1px solid white;
-  background-color: black;
-  cursor: pointer;
-}
-
-.primary {
-  float: left;
-  margin-left: calc(max(1vh, 1vw) * 0.5);
-  color: white;
-}
-
-.danger {
-  float: right;
-  margin-right: calc(max(1vh, 1vw) * 0.5);
-  border-color: red;
-  color: red;
+  margin-top: var(--space-4);
 }
 </style>

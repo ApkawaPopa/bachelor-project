@@ -1,41 +1,24 @@
 <template>
-  <div id="ChatMenu" @click="$emit('close')">
-    <div id="ChatMenuBody" @click.stop>
-      <div id="ChatMenuHeader">
-        <img v-if="chatImages.length" id="ChatAvatar"
-             :src="chatImages[chatImages.length - 1]" @click="$emit('openChatGallery')">
-        <p v-else id="chatAvatar"/>
-        <p id="ChatName">{{ chatName }}</p>
+  <div class="modal-overlay" @click="$emit('close')">
+    <div class="modal-content" @click.stop>
+      <div class="chat-menu__header">
+        <img v-if="chatImages.length" :src="chatImages[chatImages.length-1]" class="profile-avatar"
+             @click="$emit('openChatGallery')"/>
+        <div v-else class="avatar avatar--placeholder profile-avatar"></div>
+        <h3>{{ chatName }}</h3>
       </div>
-      <div id="ChatMenuButtons">
-        <input ref="profileImg" accept="image/*" autocomplete="off" style="display: none" type="file"
-               @change="onImageSelect"/>
-        <button id="ChatMenuPhotoSelect" @click="$refs.profileImg.click()">Выбрать фото</button>
-        <button id="ChatMenuDelete" @click="$emit('chat-delete')">Удалить чат</button>
+
+      <div class="chat-menu__actions">
+        <button class="btn" @click="$refs.profileImg.click()">Выбрать фото</button>
+        <input ref="profileImg" accept="image/*" hidden type="file" @change="onImageSelect"/>
+        <button class="btn btn--danger" @click="$emit('chat-delete')">Удалить чат</button>
       </div>
-      <div id="ChatMenuSafe">
-        <div id="ChatMenuSafeImage">
-          <div v-for="image in imageValues" class="ChatMenuSafeImageRow">
-            <p v-for="pixel in image"
-               :style="{'background-color':'rgba(' + pixel[0].toString() + ',' + pixel[1].toString() + ',' + pixel[2].toString() + ',' + pixel[3].toString() + ')'}"
-               class="ChatMenuSafeImagePixel">
-              0</p>
-          </div>
-        </div>
-        <div id="ChatMenuSafeStrings">
-          <div v-for="string in stringValues" class="ChatMenuSafeString">
-            <p v-for="item in string" class="ChatMenuSafeItem">{{ item }}</p>
-          </div>
-        </div>
-        <p id="ChatMenuSafeText">Это изображение и текст созданы на основе ключей шифрования. Если они совпадают у всех
-          участников, чат полностью приватен.</p>
-      </div>
-      <div id="ChatMenuUsers">
-        <div v-for="user in users" :key="user.id" class="ChatMenuUser"
-             @click.stop="$emit('openUserProfile', user.username)">
-          <img v-if="user.url" :src="user.url" class="ChatMenuUserAvatar">
-          <p v-else class="ChatMenuUserAvatar"/>
-          <p class="ChatMenuUserName">{{ user.username }}</p>
+
+      <div class="chat-menu__users">
+        <div v-for="user in users" :key="user.id" class="user-row" @click="$emit('openUserProfile', user.username)">
+          <img v-if="user.url" :src="user.url" class="avatar"/>
+          <div v-else class="avatar avatar--placeholder"></div>
+          <span>{{ user.username }}</span>
         </div>
       </div>
     </div>
@@ -62,353 +45,41 @@ const onImageSelect = (event) => {
 </script>
 
 <style scoped>
-@media (orientation: portrait) {
-  #ChatMenu {
-    width: 100vw;
-    height: 100%;
-    left: 0;
-    top: 0;
-    background-color: rgba(50, 50, 50, 50%);
-    position: fixed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  #ChatMenuBody {
-    border: 1px solid white;
-    width: 80vw;
-    height: 80vh;
-    background-color: black;
-  }
-
-  #ChatMenuHeader {
-    padding-top: 1vh;
-    item-direction: column;
-    border-bottom: 1px solid white;
-  }
-
-  #ChatAvatar {
-    margin: 0;
-    height: 10vh;
-    width: 10vh;
-    margin-left: calc(50% - 5vh);
-    background-color: white;
-    border-radius: 100%;
-  }
-
-  #ChatName {
-    padding-top: 1vh;
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    height: 2.5vh;
-    font-size: 2vh;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  #ChatMenuDelete {
-    width: 30vw;
-    border: 1px solid white;
-    border-top: 0px;
-    border-radius: 0 0 12px 12px;
-    background-color: black;
-    font-weight: bold;
-    height: 2.5vh;
-    font-size: 2vh;
-    font-family: "Arial";
-    color: white;
-    padding: 0;
-    margin: 0;
-    margin-left: calc(50% - 15vw);
-  }
-
-  #ChatMenuSafe {
-    margin-top: 1vh;
-    margin-left: calc(50% - 35vw);
-    width: 70vw;
-    height: 37.5vh;
-  }
-
-  #ChatMenuSafeStrings {
-    height: 11.25vh;
-  }
-
-  .ChatMenuSafeString {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr;
-  }
-
-  .ChatMenuSafeItem {
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 2vh;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  #ChatMenuSafeImage {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr;
-    background-color: white;
-    width: 15vh;
-    height: 15vh;
-    margin-left: calc(50% - 7.5vh);
-  }
-
-  #ChatMenuSafeText {
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 1.5vh;
-    height: 11.25vh;
-    overflow-y: auto;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  .ChatMenuSafeImageRow {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-columns: 1fr;
-  }
-
-  .ChatMenuSafeImagePixel {
-    margin: 0;
-    color: rgba(255, 255, 255, 0);
-    font-size: 0;
-  }
-
-  #ChatMenuUsers {
-    border: 1px solid white;
-    border-radius: 12px 12px 0 0;
-    padding: 0 2%;
-    border-bottom: 0;
-    width: 86%;
-    height: calc(23.5vh - 1px);
-    margin: 1vh 5% 0 5%;
-    overflow-y: auto;
-  }
-
-  #ChatMenuUsers::-webkit-scrollbar {
-    width: 0;
-  }
-
-  .ChatMenuUser {
-    height: 4vh;
-    padding: 4px 2px;
-    border-bottom: 1px solid white;
-  }
-
-  .ChatMenuUserAvatar {
-    float: left;
-    margin: 0;
-    width: 4vh;
-    height: 4vh;
-    background-color: white;
-    border-radius: 100%;
-  }
-
-  .ChatMenuUserName {
-    float: right;
-    padding-top: 1vh;
-    width: calc(100% - 4vh - 1px);
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 2vh;
-    font-family: "Arial";
-  }
+.chat-menu__header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
 }
-</style>
 
-<style scoped>
-@media (orientation: landscape) {
-  #ChatMenu {
-    width: 100vw;
-    height: 100vh;
-    left: 0;
-    top: 0;
-    background-color: rgba(50, 50, 50, 50%);
-    position: fixed;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.chat-menu__actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: center;
+}
 
-  #ChatMenuBody {
-    border: 1px solid white;
-    width: 40vw;
-    height: 90vh;
-    background-color: black;
-  }
+.chat-menu__users {
+  overflow-y: auto;
+  max-height: 200px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2);
+}
 
-  #ChatMenuUsers {
-    border: 1px solid white;
-    width: 90%;
-    height: calc(24.5vh - 2px - 2vh);
-    margin: 1vh 5%;
-    overflow-y: auto;
-  }
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
+  cursor: pointer;
+}
 
-  #ChatMenuUsers::-webkit-scrollbar {
-    width: 0;
-  }
-
-  .ChatMenuUser {
-    height: 4vh;
-    padding: 4px 2px;
-    border-bottom: 1px solid white;
-  }
-
-  .ChatMenuUserAvatar {
-    float: left;
-    margin: 0;
-    width: 4vh;
-    height: 4vh;
-    background-color: white;
-    border-radius: 100%;
-  }
-
-  .ChatMenuUserName {
-    float: right;
-    padding-top: 1vh;
-    width: calc(100% - 4vh - 1px);
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 2vh;
-    font-family: "Arial";
-  }
-
-  #ChatMenuHeader {
-    padding-top: 1vh;
-    item-direction: column;
-  }
-
-  #ChatAvatar {
-    margin: 0;
-    height: 10vh;
-    width: 10vh;
-    margin-left: calc(50% - 5vh);
-    background-color: white;
-    border-radius: 100%;
-  }
-
-  #ChatName {
-    padding-top: 1vh;
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    height: 2.5vh;
-    font-size: 2vh;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  #ChatMenuDelete {
-    border: 1px solid red;
-    background-color: black;
-    font-weight: bold;
-    width: 47%;
-    height: 100%;
-    font-size: 2vh;
-    font-family: "Arial";
-    color: red;
-    padding: 0;
-    margin: 0;
-    margin-left: 6%;
-    float: right;
-  }
-
-  #ChatMenuPhotoSelect {
-    border: 1px solid white;
-    background-color: black;
-    font-weight: bold;
-    width: 47%;
-    height: 100%;
-    font-size: 2vh;
-    font-family: "Arial";
-    color: white;
-    padding: 0;
-    margin: 0;
-    float: left;
-  }
-
-  #ChatMenuButtons {
-    width: 30vw;
-    height: 9vh;
-    margin-left: calc(max(1vh, 1vw) * 5);
-  }
-
-  #ChatMenuSafe {
-    margin-top: 1vh;
-    margin-left: calc(max(1vh, 1vw) * 5 - 5px);
-    padding: 5px;
-    width: 30vw;
-    height: calc(41vh - 12px);
-  }
-
-  .ChatMenuSafeString {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr;
-  }
-
-  .ChatMenuSafeItem {
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 2vh;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  #ChatMenuSafeImage {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-rows: 1fr;
-    background-color: white;
-    width: 15vh;
-    height: 15vh;
-    margin-left: calc(15vw - 7.5vh);
-  }
-
-  #ChatMenuSafeStrings {
-    height: calc(25.5vh - 12px - 15vh);
-  }
-
-  #ChatMenuSafeText {
-    color: white;
-    margin: 0;
-    font-weight: bold;
-    font-size: 2vh;
-    height: 15vh;
-    overflow-y: auto;
-    font-family: "Arial";
-    text-align: center;
-  }
-
-  .ChatMenuSafeImageRow {
-    display: grid;
-    grid-auto-columns: 1fr;
-    grid-template-rows: 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
-    grid-template-columns: 1fr;
-  }
-
-  .ChatMenuSafeImagePixel {
-    margin: 0;
-    color: rgba(255, 255, 255, 0);
-    font-size: 0;
-  }
+.profile-avatar {
+  width: 8rem;
+  height: 8rem;
+  margin: 0 auto;
+  cursor: pointer;
+  border-radius: var(--radius-full);
+  object-fit: cover;
 }
 </style>

@@ -1,21 +1,27 @@
 <template>
-  <button id="userProfileButton" @click="$emit('open-profile')">Профиль</button>
-  <div id="chatSelector">
-    <div
-        v-for="chat in chats"
-        :key="chat.id"
-        :class="{selected: activeChatId === chat.id}"
-        class="chat"
-        @click="selectChat(chat.id)"
-    >
-      <img v-if="chat.image" :src="chat.image" class="chatAvatar"/>
-      <p v-else class="chatAvatar"/>
-      <p class="chatName">{{ chat.name }}</p>
-      <p class="chatTimer">{{ chat.time }}</p>
-      <p v-if="chat.unreadMessages>0" class="chatMessagesCount">{{ chat.unreadMessages }}</p>
-      <p class="chatLastMessage">{{ chat.lastMessage }}</p>
+  <div class="chat-list-wrapper">
+    <button class="btn profile-btn" @click="$emit('open-profile')">Профиль</button>
+    <div class="chat-list">
+      <div
+          v-for="chat in chats" :key="chat.id"
+          :class="{ active: activeChatId === chat.id }" class="chat-item"
+          @click="$emit('select-chat', chat.id)"
+      >
+        <img v-if="chat.image" :src="chat.image" class="avatar"/>
+        <div v-else class="avatar avatar--placeholder"></div>
+        <div class="chat-item__info">
+          <div class="chat-item__header">
+            <span class="chat-item__name">{{ chat.name }}</span>
+            <span class="chat-item__time">{{ chat.time }}</span>
+          </div>
+          <div class="chat-item__footer">
+            <span class="chat-item__message">{{ chat.lastMessage }}</span>
+            <span v-if="chat.unreadMessages>0" class="chat-item__unread">{{ chat.unreadMessages }}</span>
+          </div>
+        </div>
+      </div>
+      <button class="btn add-chat-btn" @click="$emit('open-add-chat')">+</button>
     </div>
-    <button id="addChat" @click="$emit('open-add-chat')">+</button>
   </div>
 </template>
 
@@ -32,142 +38,86 @@ const selectChat = (chatId) => {
 </script>
 
 <style scoped>
-  #userProfileButton {
-    width:100%;
-    height:6%;
-    border:0;
-    border-bottom:1px solid black;
-    padding:0;
-    color: black;
-    background-color: white;
-    font-weight: bold;
-    font-size: 2vh;
-  }
+.profile-btn {
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-3);
+  width: 100%;
+  flex-shrink: 0;
+}
 
-  #chatSelector {
-    float: left;
-    background-color: black;
-    width: 100%;
-    height: 94%;
-    overflow: auto;
-  }
+.chat-list-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+}
 
-  #chatSelector::-webkit-scrollbar {
-    width: 0;
-  }
+.chat-list {
+  flex: 1;
+  overflow-y: auto;
+}
 
-  .chat {
-    width: 25vw;
-    height: 6vh;
-    background-color: black;
-    border-bottom: 1px solid white;
-    cursor: pointer;
-  }
+.chat-item__info {
+  flex: 1;
+  margin-left: var(--space-3);
+  min-width: 0;
+}
 
-  .chat .chatAvatar {
-    float: left;
-    width: 5vh;
-    height: 5vh;
-    margin: 0.5vh 0 0 0.5vh;
-    background-color: white;
-    border-radius: 100%;
-  }
+.chat-item__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--font-size-sm);
+}
 
-  .chat .chatName {
-    overflow: hidden;
-    float: left;
-    margin: 0;
-    width: calc(25vw - 12vh - 3px);
-    color: white;
-    font-weight: bold;
-    font-size: 1.75vh;
-    height: 2vh;
-    padding: 0.5vh 0;
-    padding-left: 0.5vh;
-    font-family: "Arial";
-  }
+.chat-item__name {
+  font-weight: var(--font-weight-bold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-  .chat .chatLastMessage {
-    overflow: hidden;
-    float: left;
-    margin: 0;
-    width: calc(25vw - 12vh - 3px);
-    color: white;
-    font-weight: bold;
-    font-size: 1.75vh;
-    height: 2vh;
-    padding: 0.5vh 0;
-    padding-left: 0.5vh;
-    font-family: "Arial";
-  }
+.chat-item__time {
+  font-size: var(--font-size-xs);
+  opacity: 0.7;
+  margin-left: var(--space-2);
+}
 
-  .chat .chatMessagesCount {
-    overflow: hidden;
-    float: right;
-    text-align: center;
-    margin: 0;
-    color: black;
-    font-weight: bold;
-    font-size: 2vh;
-    height: 1.5vh;
-    width: 3.25vh;
-    padding-top: 0.5vh;
-    padding-bottom: 1.25vh;
-    margin-right: 0.25vh;
-    margin-top: 0.25vh;
-    font-family: "Arial";
-    background-color: white;
-    border-radius: 100%;
-  }
+.chat-item__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-1);
+}
 
-  .chat .chatTimer {
-    overflow: hidden;
-    float: right;
-    text-align: center;
-    margin: 0;
-    color: white;
-    font-weight: bold;
-    font-size: 1.5vh;
-    height: 2vh;
-    width: 6vh;
-    margin-right: 0.25vh;
-    margin-top: 0.25vh;
-    font-family: "Arial";
-  }
+.chat-item__message {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: var(--font-size-xs);
+  opacity: 0.8;
+}
 
-  .chat.selected .chatAvatar {
-    background-color: black;
-  }
+.chat-item__unread {
+  background: var(--color-text);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-full);
+  padding: 0 var(--space-1);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-bold);
+  min-width: 1.5em;
+  text-align: center;
+}
 
-  .chat.selected .chatName {
-    color: black;
-  }
-
-  .chat.selected .chatLastMessage {
-    color: black;
-  }
-
-  .chat.selected .chatTimer {
-    color: black;
-  }
-
-  .chat.selected {
-    background-color: white;
-  }
-
-  #addChat {
-    position: fixed;
-    top: calc(100% - calc(max(1vh, 1vw) * 5.5));
-    left: calc(max(1vh, 1vw) * 19.5);
-    width: calc(max(1vh, 1vw) * 5);
-    height: calc(max(1vh, 1vw) * 5);
-    border-radius: 100%;
-    border: 0;
-    background-color: white;
-    color: black;
-    font-size: calc(max(1vh, 1vw) * 4);
-    padding: 0;
-    text-align: center;
-    cursor: pointer;
-  }
+.add-chat-btn {
+  position: absolute;
+  bottom: var(--space-4);
+  right: var(--space-4);
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-xl);
+  padding: 0;
+  z-index: 50;
+}
 </style>
