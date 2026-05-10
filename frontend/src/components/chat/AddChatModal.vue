@@ -6,10 +6,12 @@
         <input v-model="newParticipant" class="input" placeholder="Имя пользователя"/>
         <button class="btn" @click="addParticipant">Добавить</button>
       </div>
-      <div :class="{ 'has-users': participants.length > 0 }" class="participants">
-        <div v-for="user in participants" :key="user.username" class="participant-row">
-          <span>{{ user.username }}</span>
-          <button class="btn" @click="removeParticipant(user)">✖</button>
+      <div :class="{ 'has-users': participants.length > 0 }" class="participants-wrapper">
+        <div class="participants">
+          <div v-for="user in participants" :key="user.username" class="participant-row">
+            <span>{{ user.username }}</span>
+            <button class="btn" @click="removeParticipant(user)">✖</button>
+          </div>
         </div>
       </div>
       <button v-if="participants.length > 0" class="btn btn--primary" @click="createGroupChat">Создать</button>
@@ -61,16 +63,20 @@ const createGroupChat = () => {
   gap: var(--space-2);
 }
 
-.participants {
-  max-height: 200px;
-  overflow-y: scroll;
+.participants-wrapper {
   border: none;
   border-radius: var(--radius-md);
-  padding: var(--space-2);
+  overflow: hidden;
 }
 
-.participants.has-users {
+.participants-wrapper.has-users {
   border: 1px solid var(--color-border);
+}
+
+.participants {
+  max-height: 200px;
+  overflow-y: auto;
+  padding: var(--space-2);
 }
 
 .participant-row {
