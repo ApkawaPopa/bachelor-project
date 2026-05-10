@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import {reactive, ref} from 'vue';
+import {onMounted, onUnmounted, reactive, ref} from 'vue';
 import {useFileDownload} from '@/composables/useFileDownload';
 
 const props = defineProps({
@@ -156,13 +156,31 @@ const menu = reactive({
   message: {}
 });
 
+const messagesContainer = ref(null);
+
+const hideMenu = () => {
+  if (menu.visible) {
+    menu.visible = false;
+  }
+};
+
+onMounted(() => {
+  if (messagesContainer.value) {
+    messagesContainer.value.addEventListener('scroll', hideMenu, {passive: true});
+  }
+});
+
+onUnmounted(() => {
+  if (messagesContainer.value) {
+    messagesContainer.value.removeEventListener('scroll', hideMenu);
+  }
+});
+
 const showMenu = (message, isMe, e) => {
   if (!isMe) return;
   const rect = e.currentTarget.getBoundingClientRect();
   menu.visible = true;
-  console.log(e)
-  console.log(rect)
-  menu.x = rect.width + 12 + 5 + 1 + 'px';
+  menu.x = Math.ceil(rect.width) + 12 + 5 + 1 + 'px';
   menu.y = rect.top + rect.height / 2 + 'px';
   menu.message = message;
 };

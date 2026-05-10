@@ -1,55 +1,50 @@
 <template>
   <div class="modal-overlay" @click="$emit('close')">
     <div class="modal-content" @click.stop>
-      <!-- Заголовок с аватаром -->
-      <div class="chat-menu__header">
-        <img v-if="chatImages.length" :src="chatImages[chatImages.length-1]" class="avatar avatar--profile"
-             @click="$emit('openChatGallery')"/>
-        <div v-else class="avatar avatar--placeholder avatar--profile"></div>
-        <h3>{{ chatName }}</h3>
-      </div>
+      <div class="modal-scroll">
+        <div class="chat-menu__header">
+          <img v-if="chatImages.length" :src="chatImages[chatImages.length-1]" class="avatar avatar--profile"
+               @click="$emit('openChatGallery')"/>
+          <div v-else class="avatar avatar--placeholder avatar--profile"></div>
+          <h3>{{ chatName }}</h3>
+        </div>
 
-      <!-- Кнопки действий -->
-      <div class="chat-menu__actions">
-        <button class="btn" @click="$refs.profileImg.click()">Выбрать фото</button>
-        <input ref="profileImg" accept="image/*" hidden type="file" @change="onImageSelect"/>
-        <button class="btn btn--danger" @click="$emit('chat-delete')">Удалить чат</button>
-      </div>
+        <div class="chat-menu__actions">
+          <button class="btn" @click="$refs.profileImg.click()">Выбрать фото</button>
+          <input ref="profileImg" accept="image/*" hidden type="file" @change="onImageSelect"/>
+          <button class="btn btn--danger" @click="$emit('chat-delete')">Удалить чат</button>
+        </div>
 
-      <!-- Safety-секция: возвращённая картинка, строки и подпись -->
-      <div class="chat-menu__safety">
-        <!-- Пиксельная картинка -->
-        <div class="safety-image">
-          <div v-for="(imageRow, rowIdx) in imageValues" :key="'img-row-'+rowIdx" class="safety-image__row">
-            <div v-for="(pixel, pixIdx) in imageRow" :key="'pix-'+rowIdx+'-'+pixIdx"
-                 :style="{ backgroundColor: `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]})` }"
-                 class="safety-image__pixel">
+        <div class="chat-menu__safety">
+          <div class="safety-image">
+            <div v-for="(imageRow, rowIdx) in imageValues" :key="'img-row-'+rowIdx" class="safety-image__row">
+              <div v-for="(pixel, pixIdx) in imageRow" :key="'pix-'+rowIdx+'-'+pixIdx"
+                   :style="{ backgroundColor: `rgba(${pixel[0]},${pixel[1]},${pixel[2]},${pixel[3]})` }"
+                   class="safety-image__pixel">
+              </div>
             </div>
           </div>
-        </div>
 
-        <!-- Строки -->
-        <div class="safety-strings">
-          <div v-for="(stringRow, sIdx) in stringValues" :key="'str-row-'+sIdx" class="safety-strings__row">
-            <span v-for="(item, iIdx) in stringRow" :key="'str-'+sIdx+'-'+iIdx" class="safety-strings__item">
-              {{ item }}
-            </span>
+          <div class="safety-strings">
+            <div v-for="(stringRow, sIdx) in stringValues" :key="'str-row-'+sIdx" class="safety-strings__row">
+              <span v-for="(item, iIdx) in stringRow" :key="'str-'+sIdx+'-'+iIdx" class="safety-strings__item">
+                {{ item }}
+              </span>
+            </div>
           </div>
+
+          <p class="safety-text">
+            Это изображение и текст созданы на основе ключей шифрования. Если они совпадают у всех участников, чат
+            полностью приватен.
+          </p>
         </div>
 
-        <!-- Пояснительный текст -->
-        <p class="safety-text">
-          Это изображение и текст созданы на основе ключей шифрования. Если они совпадают у всех участников, чат
-          полностью приватен.
-        </p>
-      </div>
-
-      <!-- Список участников -->
-      <div class="chat-menu__users">
-        <div v-for="user in users" :key="user.id" class="user-row" @click="$emit('openUserProfile', user.username)">
-          <img v-if="user.url" :src="user.url" class="avatar"/>
-          <div v-else class="avatar avatar--placeholder"></div>
-          <span>{{ user.username }}</span>
+        <div class="chat-menu__users">
+          <div v-for="user in users" :key="user.id" class="user-row" @click="$emit('openUserProfile', user.username)">
+            <img v-if="user.url" :src="user.url" class="avatar"/>
+            <div v-else class="avatar avatar--placeholder"></div>
+            <span>{{ user.username }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -76,6 +71,22 @@ const onImageSelect = (event) => {
 </script>
 
 <style scoped>
+.modal-content {
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-scroll {
+  overflow-y: auto;
+  max-height: 90dvh;
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .chat-menu__header {
   display: flex;
   flex-direction: column;
@@ -89,7 +100,6 @@ const onImageSelect = (event) => {
   justify-content: center;
 }
 
-/* Safety section */
 .chat-menu__safety {
   display: flex;
   flex-direction: column;
@@ -104,7 +114,6 @@ const onImageSelect = (event) => {
   grid-template-rows: repeat(12, 1fr);
   width: 180px;
   height: 180px;
-  background: #fff; /* белый фон для наглядности */
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
@@ -150,13 +159,11 @@ const onImageSelect = (event) => {
   line-height: 1.4;
 }
 
-/* Users list */
 .chat-menu__users {
-  overflow-y: auto;
-  max-height: 200px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: var(--space-2);
+  margin-top: var(--space-2);
 }
 
 .user-row {
