@@ -22,7 +22,7 @@
           <div>{{ message.content }}</div>
           <div v-if="message.fileKeys?.length" class="message-attachments">
             <div v-for="file in message.fileKeys" :key="file.fileKey" class="attachment"
-                 @click="downloadFile(file.fileKey, file.filename)">
+                 @click.stop="downloadFile(file.fileKey, file.filename)">
               📄 {{ file.filename }}
             </div>
           </div>
