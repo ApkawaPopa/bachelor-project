@@ -31,10 +31,6 @@ defineProps({
   activeChatId: {type: Number, default: -1},
 });
 const emit = defineEmits(['select-chat', 'open-add-chat', 'open-profile']);
-
-const selectChat = (chatId) => {
-  emit('select-chat', chatId);
-};
 </script>
 
 <style scoped>

@@ -205,6 +205,10 @@ html, body {
     color: var(--color-text-inverse);
 }
 
+.chat-item.active .avatar--placeholder {
+    background: var(--color-text-inverse);
+}
+
 /* Message bubble */
 .message {
     display: flex;
@@ -228,6 +232,7 @@ html, body {
 
 .message--own .message-bubble {
     border-radius: var(--radius-lg) var(--radius-lg) 0 var(--radius-lg);
+    cursor: pointer;
 }
 
 .message-bubble__sender {
