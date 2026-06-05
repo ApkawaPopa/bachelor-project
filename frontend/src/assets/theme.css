@@ -398,3 +398,122 @@ html, body {
     border-radius: var(--radius-full);
     object-fit: cover;
 }
+
+/* ====== PROTOTYPE MODE ====== */
+body.prototype-mode {
+    --color-bg: #ffffff;
+    --color-bg-alt: #f0f0f0;
+    --color-text: #333333;
+    --color-text-inverse: #ffffff;
+    --color-border: #999999;
+    --color-danger: #cc0000;
+
+    filter: grayscale(100%);
+}
+
+body.prototype-mode * {
+    font-family: 'Courier New', monospace !important;
+    text-shadow: none !important;
+    box-shadow: none !important;
+}
+
+/* Все границы делаем пунктирными/сплошными и утолщёнными */
+body.prototype-mode .chat-item,
+body.prototype-mode .message-bubble,
+body.prototype-mode .input,
+body.prototype-mode .btn,
+body.prototype-mode .modal-content,
+body.prototype-mode .chat-header,
+body.prototype-mode .chat-input,
+body.prototype-mode .sidebar {
+    border: 1px dashed var(--color-border) !important;
+    border-radius: 0 !important;
+    background: var(--color-bg) !important;
+    color: var(--color-text) !important;
+}
+
+/* Убираем заливку у активных элементов */
+body.prototype-mode .chat-item.active {
+    background: var(--color-bg-alt) !important;
+    color: var(--color-text) !important;
+}
+
+/* Кнопки */
+body.prototype-mode .btn {
+    background: var(--color-bg) !important;
+    color: var(--color-text) !important;
+    border: 1px solid var(--color-border) !important;
+    border-radius: 0 !important;
+}
+
+body.prototype-mode .btn:hover {
+    background: var(--color-bg-alt) !important;
+}
+
+/* Скрываем все изображения и аватары, заменяя их placeholder */
+body.prototype-mode .avatar,
+body.prototype-mode .message-image,
+body.prototype-mode .carousel-image,
+body.prototype-mode img {
+    display: none !important;
+}
+
+/* Показываем заглушку вместо аватаров */
+body.prototype-mode .avatar::after {
+    content: '[avatar]';
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 1px dashed var(--color-border);
+    background: var(--color-bg-alt);
+    color: var(--color-text);
+    font-size: 0.6rem;
+    white-space: nowrap;
+}
+
+body.prototype-mode .avatar--profile::after {
+    width: 8rem;
+    height: 8rem;
+    content: '[profile photo]';
+}
+
+/* Поля ввода */
+body.prototype-mode .input {
+    background: var(--color-bg) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+/* Модальные окна */
+body.prototype-mode .modal-overlay {
+    background: rgba(255, 255, 255, 0.9) !important;
+}
+
+body.prototype-mode .modal-content {
+    background: var(--color-bg) !important;
+    border: 2px solid var(--color-border) !important;
+}
+
+/* Свитки с грубыми линиями */
+body.prototype-mode ::-webkit-scrollbar-thumb {
+    background: var(--color-border) !important;
+    border-radius: 0 !important;
+}
+
+/* Файловые превью */
+body.prototype-mode .file-preview__item {
+    background: var(--color-bg-alt) !important;
+    border: 1px dashed var(--color-border) !important;
+}
+
+/* Контекстное меню */
+body.prototype-mode .context-menu {
+    background: var(--color-bg) !important;
+    border: 1px solid var(--color-border) !important;
+}
+
+/* Safety image (меню чата) */
+body.prototype-mode .safety-image__pixel {
+    background: #cccccc !important;
+}

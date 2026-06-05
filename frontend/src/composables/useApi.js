@@ -2,12 +2,10 @@ import {useStorage} from './useStorage';
 
 export function useApi() {
     const {loadAuthData} = useStorage();
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     const request = async (endpoint, options = {}) => {
         const token = loadAuthData()?.jwt;
-        const url = `https://${API_BASE_URL}${endpoint}`;
-        const response = await fetch(url, {
+        const response = await fetch(endpoint, {
             ...options,
             headers: {
                 'Content-Type': 'application/json',

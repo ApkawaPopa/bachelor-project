@@ -35,6 +35,14 @@ export function useChat() {
 
     const activeMessages = computed(() => chatMessages.value.get(activeChatId.value) || []);
 
+    const isPrototype = () => localStorage.getItem('prototype-mode') === 'true'
+
+    const randomWords = ['lorem', 'ipsum', 'dolor', 'sit', 'amet', 'consectetur', 'adipiscing', 'elit', 'sed', 'do', 'eiusmod', 'tempor', 'incididunt', 'ut', 'labore', 'et', 'dolore']
+    const getProtoText = (minWords = 3, maxWords = 8) => {
+        const count = minWords + Math.floor(Math.random() * (maxWords - minWords))
+        return Array.from({length: count}, () => randomWords[Math.floor(Math.random() * randomWords.length)]).join(' ')
+    }
+
     function getTextDate(data) {
         let date = data.getHours().toString() + ":";
         if (data.getHours() < 10) date = "0" + date;
@@ -104,6 +112,12 @@ export function useChat() {
                 pictureUrls: item.pictureUrls,
             });
         }
+        if (isPrototype()) {
+            loadedChats.forEach(chat => {
+                chat.name = getProtoText(1, 2) // "lorem"
+                chat.lastMessage = getProtoText(4, 7)
+            })
+        }
         chats.value = loadedChats;
     };
 
@@ -143,6 +157,12 @@ export function useChat() {
                 createdAt: new Date(item.createdAt)
             });
         }
+        if (isPrototype()) {
+            messages.forEach(msg => {
+                msg.content = getProtoText(6, 12)
+                msg.sender = getProtoText(1, 1)
+            })
+        }
         chatMessages.value.set(chatId, messages);
     };
 
@@ -176,6 +196,10 @@ export function useChat() {
                 time: date,
                 createdAt: new Date(data.createdAt)
             };
+            if (isPrototype()) {
+                newMessage.content = getProtoText(6, 12)
+                newMessage.sender = getProtoText(1, 1)
+            }
             const messages = chatMessages.value.get(chatId);
             if (messages) {
                 messages.push(newMessage);
@@ -271,7 +295,7 @@ export function useChat() {
         const wsToken = wsTokenData.data;
 
         stompClient.value = new StompJs.Client({
-            webSocketFactory: () => new SockJS(`https://${API_BASE_URL}${WS_URL}?token=${wsToken}`),
+            webSocketFactory: () => new SockJS(`${WS_URL}?token=${wsToken}`),
             connectHeaders: {Authorization: `Bearer ${auth.jwtToken.value}`},
             debug: (str) => console.log(str),
         });

@@ -1,6 +1,7 @@
 package minchakov.arkadii.amina.config;
 
 import minchakov.arkadii.amina.filter.JWTFilter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,9 @@ import java.util.List;
 
 @Configuration
 public class SecurityConfig {
+
+    @Value("#{'${cors.allowed.origins}'.split(',')}")
+    private List<String> allowedOrigins;
 
     private final HandlerExceptionResolver handlerExceptionResolver;
 
@@ -59,7 +63,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

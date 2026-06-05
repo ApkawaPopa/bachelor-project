@@ -6,10 +6,16 @@ const users = ref([]);
 export function useUsers() {
     const {get, post} = useApi();
 
+    const isPrototype = () => localStorage.getItem('prototype-mode') === 'true'
+    const randomProtoName = () => 'user_' + Math.random().toString(36).substring(2, 6)
+
     const getUsersByChatId = async (chatId) => {
         const {data} = await get(`/api/v1/chat/${chatId}/users`);
         users.value = data;
         users.value.sort((a, b) => a.id - b.id);
+        if (isPrototype()) {
+            users.value = users.value.map(u => ({...u, username: randomProtoName()}))
+        }
         return users.value;
     }
 

@@ -1,37 +1,44 @@
 import {fileURLToPath, URL} from 'node:url'
-
-import {defineConfig} from 'vite'
+import {defineConfig, loadEnv} from 'vite'
 import vue from '@vitejs/plugin-vue'
-import vueDevTools from 'vite-plugin-vue-devtools'
 import fs from 'fs'
 import path from 'path'
 
-// https://vite.dev/config/
-export default defineConfig({
-  plugins: [
-    vue(),
-    vueDevTools(),
-  ],
-  resolve: {
-    alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
-    },
-  },
-  server: {
-    watch: {
-      usePolling: true,
-    },
-    https: {
-      pfx: fs.readFileSync(path.resolve(__dirname, 'localhost.pfx')),
-      passphrase: 'changeit'
-    },
-    proxy: {
-      '/api': {
-        target: 'https://backend:8080',
-        changeOrigin: true,
-        secure: false,
-        ws: true
+export default defineConfig(({mode}) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [
+      vue(),
+    ],
+    resolve: {
+      alias: {
+        '@': fileURLToPath(new URL('./src', import.meta.url))
       },
     },
+    server: {
+      watch: {
+        usePolling: true,
+      },
+      https: {
+        // Now env.CERTIFICATE_NAME and env.CERTIFICATE_PASS are available
+        pfx: fs.readFileSync(path.resolve(__dirname, env.CERTIFICATE_NAME)),
+        passphrase: env.CERTIFICATE_PASS
+      },
+      proxy: {
+        '/api': {
+          target: 'https://backend:8080',
+          changeOrigin: true,
+          secure: false,
+          ws: true
+        },
+        '/ws': {
+          target: 'https://backend:8080',
+          changeOrigin: true,
+          secure: false,
+          ws: true,        // разрешаем WebSocket
+        },
+      },
+    }
   }
 })

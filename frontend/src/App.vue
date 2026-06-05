@@ -18,6 +18,10 @@ import {useFileDownload} from "@/composables/useFileDownload.js";
 import {useFileUpload} from "@/composables/useFileUpload.js";
 import ImageCarouselModal from "@/components/common/ImageCarouselModal.vue";
 
+const displayUsername = computed(() => {
+  return localStorage.getItem('prototype-mode') === 'true' ? 'user_xxxx' : username.value
+})
+
 const {sha256} = useCrypto();
 const {isAuthenticated, username, restoreSession, login, register, logout} = useAuth();
 const {

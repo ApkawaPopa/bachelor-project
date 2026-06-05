@@ -1,4 +1,4 @@
-import {ref} from 'vue';
+import {computed, ref} from 'vue';
 import {useCrypto} from './useCrypto';
 import {useStorage} from './useStorage';
 import {useApi} from './useApi';
@@ -15,6 +15,8 @@ export function useAuth() {
     } = useCrypto();
     const {saveAuthData, loadAuthData, clearAuth} = useStorage();
     const {post} = useApi();
+
+    const isPrototype = () => localStorage.getItem('prototype-mode') === 'true'
 
     const restoreSession = async () => {
         const data = loadAuthData();
@@ -99,7 +101,7 @@ export function useAuth() {
 
     return {
         isAuthenticated,
-        username,
+        username: computed(() => isPrototype() ? 'current_user_proto' : username.value),
         jwtToken,
         privateKey,
         restoreSession,
