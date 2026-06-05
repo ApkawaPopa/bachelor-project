@@ -8,9 +8,9 @@
       </div>
     </div>
 
-    <div ref="messagesContainer" class="messages">
-      <div v-for="message in messages"
-           :key="message.id"
+    <div ref="messagesContainer" class="messages" @scroll="handleScroll">
+      <div v-for="(message, index) in messages" :key="message.id"
+           :ref="el => setLastMessageRef(el, index)"
            :class="{'message--own': message.sender === currentUser}"
            class="message">
         <div class="message-bubble"
@@ -42,6 +42,10 @@
       </div>
     </div>
 
+    <button v-if="showScrollButton" class="scroll-to-bottom-btn" @click="scrollToBottom">
+      ⭣
+    </button>
+
     <div v-if="isEditing" class="edit-bar">
       <span>Редактирование</span>
       <button class="btn" @click="cancelEdit">✖</button>
@@ -64,7 +68,7 @@
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, reactive, ref} from 'vue';
+import {nextTick, onMounted, onUnmounted, reactive, ref, watch} from 'vue';
 import {useFileDownload} from '@/composables/useFileDownload';
 
 const props = defineProps({
@@ -157,6 +161,44 @@ const menu = reactive({
 });
 
 const messagesContainer = ref(null);
+const lastMessageElement = ref(null);
+const showScrollButton = ref(false);
+let initialScrollDone = false;
+let previousMessagesLength = 0;
+let wasLastMessageVisibleBeforeUpdate = false;
+
+const setLastMessageRef = (el, index) => {
+  if (index === props.messages.length - 1 && el) {
+    lastMessageElement.value = el;
+  }
+};
+
+const isLastMessageVisible = () => {
+  if (!lastMessageElement.value || !messagesContainer.value) return false;
+  const containerRect = messagesContainer.value.getBoundingClientRect();
+  const elementRect = lastMessageElement.value.getBoundingClientRect();
+  const elementTop = elementRect.top - containerRect.top;
+  const elementBottom = elementRect.bottom - containerRect.top;
+  const containerHeight = messagesContainer.value.clientHeight;
+  return elementBottom > 0 && elementTop < containerHeight;
+};
+
+const scrollToBottom = () => {
+  if (!messagesContainer.value) return;
+  messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+  showScrollButton.value = false;
+};
+
+const handleScroll = () => {
+  hideMenu();
+  const visible = isLastMessageVisible();
+  if (!visible) {
+    if (!showScrollButton.value) showScrollButton.value = true;
+  } else {
+    if (showScrollButton.value) showScrollButton.value = false;
+  }
+  wasLastMessageVisibleBeforeUpdate = visible;
+};
 
 const hideMenu = () => {
   if (menu.visible) {
@@ -166,13 +208,13 @@ const hideMenu = () => {
 
 onMounted(() => {
   if (messagesContainer.value) {
-    messagesContainer.value.addEventListener('scroll', hideMenu, {passive: true});
+    messagesContainer.value.addEventListener('scroll', handleScroll);
   }
 });
 
 onUnmounted(() => {
   if (messagesContainer.value) {
-    messagesContainer.value.removeEventListener('scroll', hideMenu);
+    messagesContainer.value.removeEventListener('scroll', handleScroll);
   }
 });
 
@@ -187,7 +229,43 @@ const showMenu = (message, isMe, e) => {
 
 document.addEventListener("click", () => {
   menu.visible = false
-})
+});
+
+watch(() => props.messages, async (newMessages, oldMessages) => {
+  await nextTick();
+  const newLength = newMessages.length;
+  const isNewMessageAdded = newLength > previousMessagesLength && previousMessagesLength > 0;
+  if (isNewMessageAdded) {
+    if (wasLastMessageVisibleBeforeUpdate) {
+      scrollToBottom();
+    } else {
+      showScrollButton.value = true;
+    }
+  } else if (!initialScrollDone && newLength > 0) {
+    scrollToBottom();
+    initialScrollDone = true;
+  }
+  if (newLength > 0) {
+    wasLastMessageVisibleBeforeUpdate = isLastMessageVisible();
+  }
+  previousMessagesLength = newLength;
+}, {deep: true});
+
+watch(() => props.activeChatId, () => {
+  initialScrollDone = false;
+  showScrollButton.value = false;
+  previousMessagesLength = 0;
+  wasLastMessageVisibleBeforeUpdate = false;
+  if (messagesContainer.value) {
+    nextTick(() => {
+      if (props.messages.length > 0) {
+        scrollToBottom();
+        initialScrollDone = true;
+      }
+    });
+  }
+});
+
 </script>
 
 <style scoped>
@@ -195,6 +273,7 @@ document.addEventListener("click", () => {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .chat-header {
@@ -269,5 +348,31 @@ document.addEventListener("click", () => {
 
 .chat-input .input {
   flex: 1;
+}
+
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: 24px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.scroll-to-bottom-btn:hover {
+  background: var(--color-text);
+  color: var(--color-text-inverse);
 }
 </style>
