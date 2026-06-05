@@ -18,7 +18,6 @@ export function useChat() {
     const {uploadFile} = useFileUpload();
     const {downloadAndDecrypt, downloadAndDecryptByUrl} = useFileDownload();
 
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
     const WS_URL = import.meta.env.VITE_WS_URL;
 
     const chats = ref([]);

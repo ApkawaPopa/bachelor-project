@@ -33,7 +33,6 @@ services:
       HIBERNATE_SHOW_SQL: ${BACKEND_SHOW_SQL}
       HIBERNATE_FORMAT_SQL: ${BACKEND_FORMAT_SQL}
       LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
-      KEYSTORE_PASSWORD: ${BACKEND_CERTIFICATE_PASSWORD}
       JWT_SECRET: ${BACKEND_JWT_SECRET}
       S3_INTERNAL_URL: https://minio-s3:9000
       S3_EXTERNAL_URL: https://${S3_ADDRESS}:${S3_SERVER_PORT}
@@ -44,7 +43,7 @@ services:
     networks:
       - amina
     healthcheck:
-      test: [ "CMD-SHELL", "wget --no-check-certificate --spider --quiet https://localhost:8080 2>&1 | grep HTTP/" ]
+      test: [ "CMD-SHELL", "wget --spider --quiet http://localhost:8080 2>&1 | grep HTTP/" ]
       interval: 5s
       timeout: 4s
       retries: 10

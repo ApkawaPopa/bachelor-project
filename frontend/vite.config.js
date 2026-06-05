@@ -21,22 +21,21 @@ export default defineConfig(({mode}) => {
         usePolling: true,
       },
       https: {
-        // Now env.CERTIFICATE_NAME and env.CERTIFICATE_PASS are available
         pfx: fs.readFileSync(path.resolve(__dirname, env.CERTIFICATE_NAME)),
         passphrase: env.CERTIFICATE_PASS
       },
       proxy: {
         '/api': {
-          target: 'https://backend:8080',
+          target: 'http://backend:8080',
           changeOrigin: true,
           secure: false,
           ws: true
         },
         '/ws': {
-          target: 'https://backend:8080',
+          target: 'http://backend:8080',
           changeOrigin: true,
           secure: false,
-          ws: true,        // разрешаем WebSocket
+          ws: true,
         },
       },
     }
