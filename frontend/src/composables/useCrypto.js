@@ -107,7 +107,7 @@ export function useCrypto() {
     };
 
     // ---- Функции для работы с зашифрованным приватным ключом ----
-    const deriveAESKeyFromPassword = async (password, salt, iterations = 100000) => {
+    const deriveAESKeyFromPassword = async (password, salt, iterations = 600000) => {
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
             new TextEncoder().encode(password),
