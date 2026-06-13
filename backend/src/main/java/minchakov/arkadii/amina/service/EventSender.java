@@ -56,7 +56,7 @@ public class EventSender {
                 s3Service.getChatPictures(chat)
             ));
             System.out.println(user.getUsername());
-            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat/created", stompResponse);
+            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat.created", stompResponse);
         }
     }
 
@@ -72,7 +72,7 @@ public class EventSender {
         for (var user : chatUsers) {
             var stompResponse = StompResponse.success(event.chatId());
             System.out.println(user.getUsername());
-            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat/deleted", stompResponse);
+            simpMessagingTemplate.convertAndSendToUser(user.getUsername(), "/queue/chat.deleted", stompResponse);
         }
     }
 
@@ -111,7 +111,7 @@ public class EventSender {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void sendChatPictureChanged(ChatPictureChangedEvent event) {
         simpMessagingTemplate.convertAndSend(
-            "/topic/chat/" + event.chatId() + "/picture",
+            "/topic/chat." + event.chatId() + ".picture",
             StompResponse.success(event.pictureUrl())
         );
     }

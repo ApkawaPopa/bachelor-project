@@ -61,8 +61,8 @@ public class StompMessageController {
         this.s3Service = s3Service;
     }
 
-    @MessageMapping("/chat/{id}/message/post")
-    @SendTo("/topic/chat/{id}")
+    @MessageMapping("chat.{id}.message.post")
+    @SendTo("/topic/chat.{id}")
     public StompResponse<OutSendMessageDTO> sendMessage(
         @Valid InSendMessageDTO inSendMessageDTO,
         @DestinationVariable("id") int id,
@@ -119,8 +119,8 @@ public class StompMessageController {
         ));
     }
 
-    @MessageMapping("/chat/{chatId}/message/{messageId}/receive")
-    @SendTo("/topic/chat/{chatId}/received")
+    @MessageMapping("chat.{chatId}.message.{messageId}.receive")
+    @SendTo("/topic/chat.{chatId}.received")
     public StompResponse<OutReceiveMessageDTO> receiveMessage(
         @DestinationVariable("chatId") int chatId,
         @DestinationVariable("messageId") int messageId,
@@ -150,8 +150,8 @@ public class StompMessageController {
         ));
     }
 
-    @MessageMapping("/chat/{chatId}/message/{messageId}/edit")
-    @SendTo("/topic/chat/{chatId}/edited")
+    @MessageMapping("chat.{chatId}.message.{messageId}.edit")
+    @SendTo("/topic/chat.{chatId}.edited")
     public StompResponse<OutEditMessageDTO> editMessage(
         @Valid InEditMessageDTO editMessageDTO,
         @DestinationVariable("messageId") int messageId
@@ -164,8 +164,8 @@ public class StompMessageController {
         return StompResponse.success(new OutEditMessageDTO(messageId, message.getContent(), message.getUpdatedAt()));
     }
 
-    @MessageMapping("/chat/{chatId}/message/{messageId}/delete")
-    @SendTo("/topic/chat/{chatId}/deleted")
+    @MessageMapping("chat.{chatId}.message.{messageId}.delete")
+    @SendTo("/topic/chat.{chatId}.deleted")
     public StompResponse<Integer> deleteMessage(
         @DestinationVariable("chatId") int chatId,
         @DestinationVariable("messageId") int messageId

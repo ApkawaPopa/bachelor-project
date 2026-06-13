@@ -26,6 +26,8 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      message-broker:
+        condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -40,10 +42,31 @@ services:
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET}
       CORS_ALLOWED_ORIGINS: ${BACKEND_CORS}
+      BROKER_HOST: "message-broker"
+      BROKER_PORT: "61613"
+      BROKER_LOGIN: ${BROKER_LOGIN}
+      BROKER_PASSCODE: ${BROKER_PASSCODE}
     networks:
       - amina
     healthcheck:
-      test: [ "CMD-SHELL", "wget --spider --quiet http://localhost:8080 2>&1 | grep HTTP/" ]
+      test: [ "CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1" ]
+      interval: 5s
+      timeout: 4s
+      retries: 5
+      start_period: 15s
+
+  message-broker:
+    image: rabbitmq:4.3.1-alpine
+    environment:
+      RABBITMQ_DEFAULT_USER: ${BROKER_LOGIN}
+      RABBITMQ_DEFAULT_PASS: ${BROKER_PASSCODE}
+    networks:
+      - amina
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+    healthcheck:
+      test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
       interval: 5s
       timeout: 4s
       retries: 10
@@ -105,6 +128,7 @@ services:
 volumes:
   postgres-data:
   minio-data:
+  rabbitmq-data:
 
 networks:
   amina:

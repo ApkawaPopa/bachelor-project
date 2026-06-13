@@ -168,7 +168,7 @@ export function useChat() {
     const subscribeToChatTopics = (chatId, symmetricKey) => {
         if (!stompClient.value) return;
 
-        stompClient.value.subscribe(`/topic/chat/${chatId}`, async (message) => {
+        stompClient.value.subscribe(`/topic/chat.${chatId}`, async (message) => {
             const {data} = JSON.parse(message.body);
             const decryptedContent = await decryptMessageContent(data.content, symmetricKey);
             const date = getTextDate(new Date(data.createdAt));
@@ -213,12 +213,12 @@ export function useChat() {
             }
             if (chatId === activeChatId.value) {
                 stompClient.value.publish({
-                    destination: `/app/chat/${chatId}/message/${data.id}/receive`,
+                    destination: `/app/chat.${chatId}.message.${data.id}.receive`,
                 });
             }
         });
 
-        stompClient.value.subscribe(`/topic/chat/${chatId}/received`, (message) => {
+        stompClient.value.subscribe(`/topic/chat.${chatId}.received`, (message) => {
             const {data} = JSON.parse(message.body);
             const messages = chatMessages.value.get(chatId);
             if (messages) {
@@ -229,7 +229,7 @@ export function useChat() {
             }
         });
 
-        stompClient.value.subscribe(`/topic/chat/${chatId}/deleted`, (message) => {
+        stompClient.value.subscribe(`/topic/chat.${chatId}.deleted`, (message) => {
             const {data} = JSON.parse(message.body);
             const messages = chatMessages.value.get(chatId);
             if (!messages) return;
@@ -248,7 +248,7 @@ export function useChat() {
             }
         });
 
-        stompClient.value.subscribe(`/topic/chat/${chatId}/edited`, async (message) => {
+        stompClient.value.subscribe(`/topic/chat.${chatId}.edited`, async (message) => {
             const {data} = JSON.parse(message.body);
             const chat = chats.value.find(c => c.id === chatId);
             if (!chat) return;
@@ -270,7 +270,7 @@ export function useChat() {
             }
         });
 
-        stompClient.value.subscribe(`/topic/chat/${chatId}/picture`, async (message) => {
+        stompClient.value.subscribe(`/topic/chat.${chatId}.picture`, async (message) => {
             const {data} = JSON.parse(message.body);
             const chat = chats.value.find(c => c.id === chatId);
             if (!chat) return;
@@ -305,7 +305,7 @@ export function useChat() {
 
             stompClient.value.subscribe('/user/queue/error', (msg) => console.error('STOMP error', msg.body));
 
-            stompClient.value.subscribe('/user/queue/chat/created', async (message) => {
+            stompClient.value.subscribe('/user/queue/chat.created', async (message) => {
                 const {data} = JSON.parse(message.body);
                 const encryptedKey = base64ToArrayBuffer(data.encryptedSymmetricKey);
                 const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
@@ -324,7 +324,7 @@ export function useChat() {
                 subscribeToChatTopics(data.id, symmetricKey);
             });
 
-            stompClient.value.subscribe('/user/queue/chat/deleted', async (message) => {
+            stompClient.value.subscribe('/user/queue/chat.deleted', async (message) => {
                 const {data} = JSON.parse(message.body);
                 const chatsInd = chats.value.findIndex(c => c.id == data);
                 chatMessages.value.delete(data);
@@ -375,7 +375,7 @@ export function useChat() {
 
         const encryptedContent = await encryptMessageContent(text, chat.symmetricKey);
         stompClient.value.publish({
-            destination: `/app/chat/${activeChatId.value}/message/post`,
+            destination: `/app/chat.${activeChatId.value}.message.post`,
             body: JSON.stringify({
                 content: encryptedContent,
                 fileKeys: fileKeys
@@ -386,7 +386,7 @@ export function useChat() {
     const deleteMessage = (id) => {
         if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
         stompClient.value.publish({
-            destination: `/app/chat/${activeChatId.value}/message/${id}/delete`,
+            destination: `/app/chat.${activeChatId.value}.message.${id}.delete`,
             body: "",
         });
     };
@@ -397,7 +397,7 @@ export function useChat() {
         if (!chat) return;
         const encryptedNewContent = await encryptMessageContent(newContent, chat.symmetricKey);
         stompClient.value.publish({
-            destination: `/app/chat/${activeChatId.value}/message/${id}/edit`,
+            destination: `/app/chat.${activeChatId.value}.message.${id}.edit`,
             body: JSON.stringify({content: encryptedNewContent}),
         });
     };
@@ -411,7 +411,7 @@ export function useChat() {
         messages.forEach(msg => {
             if (!msg.receivers.some(r => r.username === auth.username.value)) {
                 stompClient.value?.publish({
-                    destination: `/app/chat/${chatId}/message/${msg.id}/receive`,
+                    destination: `/app/chat.${chatId}.message.${msg.id}.receive`,
                 });
             }
         });

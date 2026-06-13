@@ -2,7 +2,6 @@ package minchakov.arkadii.amina.config;
 
 import minchakov.arkadii.amina.controller.advice.GlobalControllerAdvice;
 import minchakov.arkadii.amina.exception.AppException;
-import minchakov.arkadii.amina.exception.BadRequestException;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
 import minchakov.arkadii.amina.exception.NotFoundException;
 import minchakov.arkadii.amina.interceptor.WebSocketHandshakeInterceptor;
@@ -12,6 +11,7 @@ import minchakov.arkadii.amina.repository.UserChatRepository;
 import minchakov.arkadii.amina.repository.UserRepository;
 import minchakov.arkadii.amina.util.AppAuthenticationToken;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.server.ServerHttpRequest;
@@ -24,6 +24,7 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
@@ -37,6 +38,16 @@ import java.util.Map;
 @Configuration
 @EnableWebSocketMessageBroker
 public class StompConfig implements WebSocketMessageBrokerConfigurer {
+    @Value("#{'${cors.allowed.origins}'.split(',')}")
+    private String[] allowedOrigins;
+    @Value("${broker.host}")
+    private String brokerHost;
+    @Value("${broker.port}")
+    private int brokerPort;
+    @Value("${broker.login}")
+    private String brokerLogin;
+    @Value("${broker.passcode}")
+    private String brokerPasscode;
 
     private final WebSocketHandshakeInterceptor webSocketHandshakeInterceptor;
     private final UserRepository userRepository;
@@ -64,7 +75,7 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
+                .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(webSocketHandshakeInterceptor)
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
                     @Override
@@ -77,6 +88,23 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                     }
                 })
                 .withSockJS();
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableStompBrokerRelay("/topic", "/queue")
+                .setUserDestinationBroadcast("/topic/user.destination")
+                .setUserRegistryBroadcast("/topic/user.registry")
+                .setRelayHost(brokerHost)
+                .setRelayPort(brokerPort)
+                .setClientLogin(brokerLogin)
+                .setClientPasscode(brokerPasscode)
+                .setSystemLogin(brokerLogin)
+                .setSystemPasscode(brokerPasscode)
+                .setAutoStartup(true);
+        registry.setApplicationDestinationPrefixes("/app");
+        registry.setUserDestinationPrefix("/user");
+        registry.setPathMatcher(new AntPathMatcher("."));
     }
 
     @Override
@@ -106,7 +134,7 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                     var command = accessor.getCommand();
                     if (command == null) {
-                        throw new BadRequestException("Stomp command not set");
+                        return message;
                     }
                     System.out.println(command);
 
@@ -119,9 +147,9 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             System.out.println("Subscribe destination: " + destination);
 
-                            var topicChatStr = "/topic/chat/";
+                            var topicChatStr = "/topic/chat.";
                             if (destination.startsWith(topicChatStr)) {
-                                for (var endingStr : List.of("/received", "/edited", "/deleted", "/picture")) {
+                                for (var endingStr : List.of(".received", ".edited", ".deleted", ".picture")) {
                                     if (destination.endsWith(endingStr)) {
                                         destination = destination.substring(
                                             0,
@@ -146,8 +174,8 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             var queues = List.of(
                                 "/user/queue/error",
-                                "/user/queue/chat/created",
-                                "/user/queue/chat/deleted",
+                                "/user/queue/chat.created",
+                                "/user/queue/chat.deleted",
                                 "/user/queue/unread"
                             );
                             if (!queues.contains(destination)) {
@@ -163,16 +191,16 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
 
                             System.out.println("Message destination: " + destination);
 
-                            var appChatStr = "/app/chat/";
+                            var appChatStr = "/app/chat.";
                             if (!destination.startsWith(appChatStr)) {
                                 throw NotFoundException.stompDefault();
                             }
                             destination = destination.substring(appChatStr.length());
 
-                            var messagePost = "/message/post";
-                            var receive = "/receive";
-                            var edit = "/edit";
-                            var delete = "/delete";
+                            var messagePost = ".message.post";
+                            var receive = ".receive";
+                            var edit = ".edit";
+                            var delete = ".delete";
                             if (destination.endsWith(messagePost)) {
                                 var chatIdStr = destination.substring(0, destination.length() - messagePost.length());
 
@@ -187,9 +215,9 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                             } else if (destination.endsWith(receive) || destination.endsWith(edit) ||
                                        destination.endsWith(delete)) {
                                 var endIsReceive = destination.endsWith(receive);
-                                destination = destination.substring(0, destination.lastIndexOf('/'));
+                                destination = destination.substring(0, destination.lastIndexOf('.'));
 
-                                var messageString = "/message/";
+                                var messageString = ".message.";
                                 var messageStringIndex = destination.indexOf(messageString);
                                 if (messageStringIndex == -1) {
                                     throw NotFoundException.stompDefault();
@@ -238,12 +266,5 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
                 }
             }
         });
-    }
-
-    @Override
-    public void configureMessageBroker(MessageBrokerRegistry registry) {
-        registry.enableSimpleBroker("/topic", "/queue");
-        registry.setApplicationDestinationPrefixes("/app");
-        registry.setUserDestinationPrefix("/user");
     }
 }
