@@ -8,8 +8,12 @@ public record RegisterDTO(
     @NotBlank(message = "Field cannot be blank") @UsernameConstraint String username,
 
     @NotBlank(message = "Field cannot be blank") @Length(
-        min = 64, max = 64, message = "Length must be equal to 64 symbols"
+        min = 44, max = 44, message = "Length must be equal to 44 symbols"
     ) String passwordHash,
+
+    @NotBlank(message = "Field cannot be blank") @Length(
+        min = 24, max = 24, message = "Length must be equal to 24 symbols"
+    ) String salt,
 
     @NotBlank(message = "Field cannot be blank") @Length(
         min = 64, message = "Length must be greater or equal to 64 symbols"

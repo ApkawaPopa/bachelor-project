@@ -39,7 +39,8 @@ public class SecurityConfig {
                        "/api/v1/auth/register",
                        "/ws/**",
                        "/ws",
-                       "/actuator/health"
+                       "/actuator/health",
+                       "/api/v1/auth/salt"
                    ).permitAll().anyRequest().authenticated())
                    .csrf(AbstractHttpConfigurer::disable)
                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))

@@ -5,6 +5,7 @@ import minchakov.arkadii.amina.dto.LoginDTO;
 import minchakov.arkadii.amina.dto.OutAuthDTO;
 import minchakov.arkadii.amina.dto.RegisterDTO;
 import minchakov.arkadii.amina.exception.InternalServerErrorException;
+import minchakov.arkadii.amina.exception.NotFoundException;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.model.WebSocketToken;
 import minchakov.arkadii.amina.repository.UserRepository;
@@ -40,7 +41,10 @@ public class AuthService {
     public OutAuthDTO register(@Valid RegisterDTO registerDTO) {
         var userToRegister = new User(
             registerDTO.username(),
-            registerDTO.passwordHash(), registerDTO.publicKey(), registerDTO.encryptedPrivateKey()
+            registerDTO.passwordHash(),
+            registerDTO.salt(),
+            registerDTO.publicKey(),
+            registerDTO.encryptedPrivateKey()
         );
 
         var hashedPassword = userToRegister.getPasswordHash();
@@ -82,5 +86,12 @@ public class AuthService {
         webSocketTokenRepository.deleteByUserId(currentUser.getId());
         webSocketTokenRepository.save(new WebSocketToken(tokenUUID, currentUser));
         return tokenUUID.toString();
+    }
+
+    public String getSalt(String username) {
+        return userRepository
+            .findByUsername(username)
+            .orElseThrow(() -> new NotFoundException("No such user"))
+            .getSalt();
     }
 }

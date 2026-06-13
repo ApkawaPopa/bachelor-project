@@ -10,11 +10,11 @@ const privateKey = ref(null);
 
 export function useAuth() {
     const {
-        sha256, generateRSAKeyPair, exportPublicKeyAsJWK, exportPrivateKeyAsPKCS8,
-        encryptPrivateKeyWithPassword, decryptPrivateKeyWithPassword
+        generateRSAKeyPair, exportPublicKeyAsJWK, exportPrivateKeyAsPKCS8, base64ToArrayBuffer, arrayBufferToBase64,
+        encryptPrivateKeyWithPassword, decryptPrivateKeyWithPassword, getPasswordHashUsingPBKDF2,
     } = useCrypto();
     const {saveAuthData, loadAuthData, clearAuth} = useStorage();
-    const {post} = useApi();
+    const {post, get} = useApi();
 
     const isPrototype = () => localStorage.getItem('prototype-mode') === 'true'
 
@@ -37,7 +37,9 @@ export function useAuth() {
     };
 
     const login = async (loginUsername, password) => {
-        const passwordHash = await sha256(password);
+        const saltBase64 = (await get(`/api/v1/auth/salt?username=${encodeURIComponent(loginUsername)}`)).data;
+        const salt = base64ToArrayBuffer(saltBase64);
+        const passwordHash = await getPasswordHashUsingPBKDF2(password, salt);
         const response = await post('/api/v1/auth/login', {
             username: loginUsername,
             passwordHash,
@@ -61,7 +63,9 @@ export function useAuth() {
     };
 
     const register = async (loginUsername, password) => {
-        const passwordHash = await sha256(password);
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const saltBase64 = arrayBufferToBase64(salt);
+        const passwordHash = await getPasswordHashUsingPBKDF2(password, salt);
         const keyPair = await generateRSAKeyPair();
         const publicKeyJwk = await exportPublicKeyAsJWK(keyPair.publicKey);
         const privateKeyPkcs8 = await exportPrivateKeyAsPKCS8(keyPair.privateKey);
@@ -69,6 +73,7 @@ export function useAuth() {
         const response = await post('/api/v1/auth/register', {
             username: loginUsername,
             passwordHash,
+            salt: saltBase64,
             publicKey: JSON.stringify(publicKeyJwk),
             encryptedPrivateKey,
         });

@@ -8,9 +8,11 @@ import minchakov.arkadii.amina.dto.RestResponse;
 import minchakov.arkadii.amina.model.User;
 import minchakov.arkadii.amina.service.AuthService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -39,5 +41,10 @@ public class AuthController {
     public RestResponse<String> getWebSocketToken(@AuthenticationPrincipal User currentUser) {
         var wsToken = authService.createWebSocketToken(currentUser);
         return RestResponse.created(wsToken);
+    }
+
+    @GetMapping("/salt")
+    public RestResponse<String> getSalt(@RequestParam String username) {
+        return RestResponse.success(authService.getSalt(username));
     }
 }

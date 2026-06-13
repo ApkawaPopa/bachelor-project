@@ -9,7 +9,7 @@ services:
       - "${POSTGRES_PORT}:5432"
     volumes:
       - postgres-data:/var/lib/postgresql
-      - ./backend/src/main/resources/db-init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./backend/src/main/resources/migrations/1.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - amina
     restart: unless-stopped

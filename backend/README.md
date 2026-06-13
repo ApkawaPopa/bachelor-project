@@ -121,7 +121,7 @@ src/main/java/minchakov/arkadii/amina/
 ```bash
 # Создание базы данных PostgreSQL
 createdb amina_db
-# или используйте предоставленный db-init.sql
+# или используйте предоставленный 1.sql
 ```
 
 2. **Настройка переменных окружения:**
@@ -169,7 +169,7 @@ docker-compose up backend
 
 1. **application.properties** - основные настройки Spring Boot
 2. **custom.properties** - кастомные свойства (JWT секрет)
-3. **db-init.sql** - SQL скрипт инициализации базы данных
+3. **1.sql** - SQL скрипт инициализации базы данных
 
 ### Настройки Spring Boot
 

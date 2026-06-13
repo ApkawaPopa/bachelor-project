@@ -30,6 +30,9 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "salt", nullable = false)
+    private String salt;
+
     @Column(name = "public_key", nullable = false)
     private String publicKey;
 
@@ -51,9 +54,10 @@ public class User {
     public User() {
     }
 
-    public User(String username, String passwordHash, String publicKey, String encryptedPrivateKey) {
+    public User(String username, String passwordHash, String salt, String publicKey, String encryptedPrivateKey) {
         this.username = username;
         this.passwordHash = passwordHash;
+        this.salt = salt;
         this.publicKey = publicKey;
         this.encryptedPrivateKey = encryptedPrivateKey;
     }
@@ -151,5 +155,13 @@ public class User {
     @Override
     public int hashCode() {
         return Objects.hashCode(id);
+    }
+
+    public String getSalt() {
+        return salt;
+    }
+
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 }

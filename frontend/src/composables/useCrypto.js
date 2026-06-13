@@ -107,7 +107,7 @@ export function useCrypto() {
     };
 
     // ---- Функции для работы с зашифрованным приватным ключом ----
-    const deriveAESKeyFromPassword = async (password, salt, iterations = 600000) => {
+    const deriveAESKeyFromPassword = async (password, salt) => {
         const keyMaterial = await crypto.subtle.importKey(
             'raw',
             new TextEncoder().encode(password),
@@ -116,18 +116,25 @@ export function useCrypto() {
             ['deriveKey']
         );
         return await crypto.subtle.deriveKey(
-            {
-                name: 'PBKDF2',
-                salt,
-                iterations,
-                hash: 'SHA-256',
-            },
+            {name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256'},
             keyMaterial,
             {name: 'AES-GCM', length: 256},
             true,
             ['encrypt', 'decrypt']
         );
     };
+
+    const getPasswordHashUsingPBKDF2 = async (password, salt) => {
+        const keyMaterial = await crypto.subtle.importKey(
+            'raw', new TextEncoder().encode(password),
+            'PBKDF2', false, ['deriveBits']
+        );
+        const bits = await crypto.subtle.deriveBits(
+            {name: 'PBKDF2', salt, iterations: 600000, hash: 'SHA-256'},
+            keyMaterial, 256
+        );
+        return arrayBufferToBase64(bits);
+    }
 
     const encryptPrivateKeyWithPassword = async (privateKeyPkcs8, password) => {
         const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -239,6 +246,7 @@ export function useCrypto() {
         aesEncrypt,
         aesDecrypt,
         deriveAESKeyFromPassword,
+        getPasswordHashUsingPBKDF2,
         encryptPrivateKeyWithPassword,
         decryptPrivateKeyWithPassword,
         decryptMessageContent,
