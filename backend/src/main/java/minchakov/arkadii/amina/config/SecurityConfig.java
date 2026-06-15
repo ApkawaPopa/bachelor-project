@@ -23,8 +23,8 @@ import java.util.List;
 @Configuration
 public class SecurityConfig {
 
-    @Value("#{'${cors.allowed.origins}'.split(',')}")
-    private List<String> allowedOrigins;
+    @Value("${cors.allowed.origin}")
+    private String allowedOrigin;
 
     private final HandlerExceptionResolver handlerExceptionResolver;
 
@@ -65,7 +65,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.addAllowedOrigin(allowedOrigin);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

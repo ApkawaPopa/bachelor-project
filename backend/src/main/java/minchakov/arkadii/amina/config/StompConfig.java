@@ -38,8 +38,8 @@ import java.util.Map;
 @Configuration
 @EnableWebSocketMessageBroker
 public class StompConfig implements WebSocketMessageBrokerConfigurer {
-    @Value("#{'${cors.allowed.origins}'.split(',')}")
-    private String[] allowedOrigins;
+    @Value("${cors.allowed.origin}")
+    private String allowedOrigin;
     @Value("${broker.host}")
     private String brokerHost;
     @Value("${broker.port}")
@@ -75,7 +75,7 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOrigins(allowedOrigins)
+                .setAllowedOrigins(allowedOrigin)
                 .addInterceptors(webSocketHandshakeInterceptor)
                 .setHandshakeHandler(new DefaultHandshakeHandler() {
                     @Override

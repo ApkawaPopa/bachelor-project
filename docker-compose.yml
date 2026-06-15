@@ -36,14 +36,14 @@ services:
       HIBERNATE_FORMAT_SQL: ${BACKEND_FORMAT_SQL}
       LOGGING_LEVEL: ${BACKEND_LOGGING_LEVEL}
       JWT_SECRET: ${BACKEND_JWT_SECRET}
-      S3_INTERNAL_URL: https://minio-s3:9000
-      S3_EXTERNAL_URL: https://${S3_ADDRESS}:${S3_SERVER_PORT}
+      S3_INTERNAL_URL: http://minio-s3:9000
+      S3_EXTERNAL_URL: https://${ADDRESS}
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET}
-      CORS_ALLOWED_ORIGINS: ${BACKEND_CORS}
-      BROKER_HOST: "message-broker"
-      BROKER_PORT: "61613"
+      CORS_ALLOWED_ORIGIN: https://${ADDRESS}
+      BROKER_HOST: message-broker
+      BROKER_PORT: 61613
       BROKER_LOGIN: ${BROKER_LOGIN}
       BROKER_PASSCODE: ${BROKER_PASSCODE}
     networks:
@@ -64,7 +64,7 @@ services:
       - amina
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
-      - ./enabled_plugins:/etc/rabbitmq/enabled_plugins
+      - ./rabbitmq/enabled_plugins:/etc/rabbitmq/enabled_plugins
     healthcheck:
       test: [ "CMD-SHELL", "rabbitmq-diagnostics -q ping" ]
       interval: 5s
@@ -73,21 +73,17 @@ services:
 
   minio-s3:
     image: quay.io/minio/aistor/minio
-    ports:
-      - "${S3_SERVER_PORT}:9000"
     volumes:
       - minio-data:/amina
       - ./backend/src/main/resources/minio/minio.license:/minio.license
-      - ./backend/src/main/resources/minio/private.key:/certs/private.key
-      - ./backend/src/main/resources/minio/public.crt:/certs/public.crt
     environment:
       MINIO_ROOT_USER: ${S3_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
-    command: minio server /amina --license /minio.license --console-address ":9001" --certs-dir /certs
+    command: minio server /amina --license /minio.license
     networks:
       - amina
     healthcheck:
-      test: [ "CMD", "curl", "-f", "-k", "-I", "https://localhost:9000/minio/health/live" ]
+      test: [ "CMD", "curl", "-f", "http://localhost:9000/minio/health/live" ]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -102,7 +98,7 @@ services:
     environment:
       MINIO_ROOT_USER: ${S3_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${S3_ROOT_PASSWORD}
-      S3_INTERNAL_URL: https://minio-s3:9000
+      S3_INTERNAL_URL: http://minio-s3:9000
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
       S3_BUCKET: ${S3_BUCKET}
@@ -111,24 +107,40 @@ services:
     entrypoint: [ "/bin/sh", "/init-minio.sh" ]
     restart: "no"
 
-  frontend:
-    build: ./frontend
+  caddy:
+    build:
+      context: .
+      dockerfile: ./caddy/Dockerfile
+    restart: unless-stopped
     ports:
-      - "443:3125"
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      ADDRESS: ${ADDRESS}
+      BACKEND_ADDRESS: http://backend:8080
+      S3_BUCKET: ${S3_BUCKET}
+      S3_ADDRESS: http://minio-s3:9000
     networks:
       - amina
-    command: npm run dev
+    volumes:
+      - caddy-data:/data
+      - caddy-config:/config
     depends_on:
       backend:
         condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-fk", "https://${ADDRESS}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
 volumes:
   postgres-data:
   minio-data:
   rabbitmq-data:
+  caddy-data:
+  caddy-config:
 
 networks:
   amina:

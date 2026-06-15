@@ -18,7 +18,7 @@ export function useChat() {
     const {uploadFile} = useFileUpload();
     const {downloadAndDecrypt, downloadAndDecryptByUrl} = useFileDownload();
 
-    const WS_URL = import.meta.env.VITE_WS_URL;
+    const WS_URL = "/ws";
 
     const chats = ref([]);
     const activeChatId = ref(-1);
