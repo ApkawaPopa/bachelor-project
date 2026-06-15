@@ -262,14 +262,6 @@ export function useChat() {
             messag.content = decryptContent
         });
 
-        stompClient.value.subscribe(`/user/queue/unread`, (unread) => {
-            const {data} = JSON.parse(unread.body);
-            const chat = chats.value[chats.value.findIndex(c => c.id == data.chatId)];
-            if (chat) {
-                chat.unreadMessages = data.unreadMessagesCount;
-            }
-        });
-
         stompClient.value.subscribe(`/topic/chat.${chatId}.picture`, async (message) => {
             const {data} = JSON.parse(message.body);
             const chat = chats.value.find(c => c.id === chatId);
@@ -290,11 +282,29 @@ export function useChat() {
     };
 
     const connect = async () => {
-        const wsTokenData = await post('/api/v1/auth/ws-token', {});
-        const wsToken = wsTokenData.data;
+        if (deactivated) return;
+
+        if (stompClient.value && connectionStatus.value !== 'disconnected') {
+            await stompClient.value.deactivate();
+            stompClient.value = null;
+        }
+
+        let wsToken;
+        try {
+            const wsTokenData = await post('/api/v1/auth/ws-token', {});
+            wsToken = wsTokenData.data;
+        } catch (err) {
+            console.error('Failed to get WS token', err);
+            setTimeout(() => connect(), 5000);
+            return;
+        }
+
+        const socket = new SockJS(`${WS_URL}?token=${wsToken}`, null, {
+            transports: ['websocket']
+        });
 
         stompClient.value = new StompJs.Client({
-            webSocketFactory: () => new SockJS(`${WS_URL}?token=${wsToken}`),
+            webSocketFactory: () => socket,
             connectHeaders: {Authorization: `Bearer ${auth.jwtToken.value}`},
             debug: (str) => console.log(str),
         });
@@ -304,57 +314,81 @@ export function useChat() {
             console.log('WebSocket connected');
 
             stompClient.value.subscribe('/user/queue/error', (msg) => console.error('STOMP error', msg.body));
-
-            stompClient.value.subscribe('/user/queue/chat.created', async (message) => {
-                const {data} = JSON.parse(message.body);
-                const encryptedKey = base64ToArrayBuffer(data.encryptedSymmetricKey);
-                const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
-                const symmetricKey = await importSymmetricKey(rawSymKey);
-                const newChat = {
-                    id: data.id,
-                    name: data.name,
-                    lastMessage: '',
-                    symmetricKey,
-                    time: getFormattedDate(new Date(data.invitedAt)),
-                    invitedAt: new Date(data.invitedAt),
-                    userCount: data.userCount
-                };
-                chats.value.unshift(newChat);
-                chatMessages.value.set(data.id, []);
-                subscribeToChatTopics(data.id, symmetricKey);
-            });
-
-            stompClient.value.subscribe('/user/queue/chat.deleted', async (message) => {
-                const {data} = JSON.parse(message.body);
-                const chatsInd = chats.value.findIndex(c => c.id == data);
-                chatMessages.value.delete(data);
-                chats.value.splice(chatsInd, 1);
-                if (activeChatId.value == data) activeChatId.value = -1;
-            });
+            stompClient.value.subscribe('/user/queue/chat.created', handleChatCreated);
+            stompClient.value.subscribe('/user/queue/chat.deleted', handleChatDeleted);
+            stompClient.value.subscribe(`/user/queue/unread`, handleUnreadCount);
 
             chats.value.forEach(chat => {
                 subscribeToChatTopics(chat.id, chat.symmetricKey);
             });
         };
 
-        stompClient.value.onStompError = (frame) => {
-            console.error('Broker error', frame.headers['message'], frame.body);
-            connectionStatus.value = 'error';
-        };
-
         stompClient.value.onWebSocketClose = () => {
             connectionStatus.value = 'disconnected';
             console.log('WebSocket closed, reconnecting in 5s');
-            if (reconnectTimeout.value) {
-                clearTimeout(reconnectTimeout.value);
-            }
+            if (reconnectTimeout.value) clearTimeout(reconnectTimeout.value);
             if (!deactivated) {
-                reconnectTimeout.value = setTimeout(() => connect(), 5000);
+                reconnectTimeout.value = setTimeout(() => reconnect(), 5000);
+            }
+        };
+
+        stompClient.value.onStompError = (frame) => {
+            console.error('Broker error', frame.headers['message'], frame.body);
+            connectionStatus.value = 'error';
+            if (!deactivated) {
+                stompClient.value.deactivate();
             }
         };
 
         stompClient.value.activate();
     };
+
+    const reconnect = async () => {
+        if (deactivated) return;
+        if (stompClient.value) {
+            try {
+                await stompClient.value.deactivate();
+            } catch (e) {
+            }
+            stompClient.value = null;
+        }
+        await connect();
+    };
+
+    const handleChatCreated = async (message) => {
+        const {data} = JSON.parse(message.body);
+        const encryptedKey = base64ToArrayBuffer(data.encryptedSymmetricKey);
+        const rawSymKey = await rsaDecrypt(auth.privateKey.value, encryptedKey);
+        const symmetricKey = await importSymmetricKey(rawSymKey);
+        const newChat = {
+            id: data.id,
+            name: data.name,
+            lastMessage: '',
+            symmetricKey,
+            time: getFormattedDate(new Date(data.invitedAt)),
+            invitedAt: new Date(data.invitedAt),
+            userCount: data.userCount
+        };
+        chats.value.unshift(newChat);
+        chatMessages.value.set(data.id, []);
+        subscribeToChatTopics(data.id, symmetricKey);
+    }
+
+    const handleChatDeleted = (message) => {
+        const {data} = JSON.parse(message.body);
+        const chatsInd = chats.value.findIndex(c => c.id == data);
+        chatMessages.value.delete(data);
+        chats.value.splice(chatsInd, 1);
+        if (activeChatId.value == data) activeChatId.value = -1;
+    }
+
+    const handleUnreadCount = (unread) => {
+        const {data} = JSON.parse(unread.body);
+        const chat = chats.value[chats.value.findIndex(c => c.id == data.chatId)];
+        if (chat) {
+            chat.unreadMessages = data.unreadMessagesCount;
+        }
+    }
 
     const sendMessage = async (text, files = []) => {
         if (!stompClient.value || connectionStatus.value !== 'connected' || activeChatId.value === -1) return;
@@ -448,8 +482,7 @@ export function useChat() {
     }
 
     const resetAll = async () => {
-        deactivated = true; // запрещаем переподключение
-
+        deactivated = true;
         if (reconnectTimeout.value) {
             clearTimeout(reconnectTimeout.value);
             reconnectTimeout.value = null;
